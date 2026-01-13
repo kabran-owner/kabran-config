@@ -8,6 +8,8 @@ import {
   countIssues,
   extractComponents,
   createMinimalResult,
+  aggregateCoverage,
+  compareCiResults,
 } from '../../src/scripts/ci-result-utils.mjs'
 
 describe('ci-result-utils', () => {
@@ -272,6 +274,123 @@ describe('ci-result-utils', () => {
       expect(result.execution).toBeDefined()
       expect(result.steps).toEqual([])
       expect(result.errors).toEqual([])
+    })
+  })
+
+  describe('aggregateCoverage', () => {
+    it('returns null for steps without coverage', () => {
+      const steps = [
+        { name: 'lint', status: 'pass' },
+        { name: 'build', status: 'pass' },
+      ]
+      expect(aggregateCoverage(steps)).toBeNull()
+    })
+
+    it('aggregates coverage from single step', () => {
+      const steps = [
+        {
+          name: 'test',
+          status: 'pass',
+          output: {
+            passed: 100,
+            failed: 0,
+            coverage: { lines: 80, branches: 70, functions: 90 },
+          },
+        },
+      ]
+      const result = aggregateCoverage(steps)
+
+      expect(result.lines).toBe(80)
+      expect(result.branches).toBe(70)
+      expect(result.functions).toBe(90)
+    })
+
+    it('calculates weighted average from multiple components', () => {
+      const steps = [
+        {
+          name: 'app-test',
+          component: 'app',
+          status: 'pass',
+          output: {
+            passed: 100,
+            failed: 0,
+            coverage: { lines: 80 },
+          },
+        },
+        {
+          name: 'web-test',
+          component: 'website',
+          status: 'pass',
+          output: {
+            passed: 50,
+            failed: 0,
+            coverage: { lines: 50 },
+          },
+        },
+      ]
+      const result = aggregateCoverage(steps)
+
+      // Weighted: (80*100 + 50*50) / 150 = 10500/150 = 70
+      expect(result.lines).toBe(70)
+      expect(result.by_component.app.lines).toBe(80)
+      expect(result.by_component.website.lines).toBe(50)
+    })
+  })
+
+  describe('compareCiResults', () => {
+    it('detects improving trend', () => {
+      const current = { summary: { score: 90, total_issues: 0, blocking: 0, status: 'passing' } }
+      const baseline = { summary: { score: 80, total_issues: 2, blocking: 0, status: 'passing' } }
+
+      const result = compareCiResults(current, baseline)
+
+      expect(result.trend).toBe('improving')
+      expect(result.score.diff).toBe(10)
+    })
+
+    it('detects degrading trend', () => {
+      const current = { summary: { score: 70, total_issues: 5, blocking: 0, status: 'degraded' } }
+      const baseline = { summary: { score: 90, total_issues: 0, blocking: 0, status: 'passing' } }
+
+      const result = compareCiResults(current, baseline)
+
+      expect(result.trend).toBe('degrading')
+      expect(result.score.diff).toBe(-20)
+    })
+
+    it('detects stable trend', () => {
+      const current = { summary: { score: 85, total_issues: 1, blocking: 0, status: 'passing' } }
+      const baseline = { summary: { score: 82, total_issues: 1, blocking: 0, status: 'passing' } }
+
+      const result = compareCiResults(current, baseline)
+
+      expect(result.trend).toBe('stable')
+    })
+
+    it('compares coverage when available', () => {
+      const current = {
+        summary: { score: 85, total_issues: 0, blocking: 0, status: 'passing' },
+        checks: { test: { coverage: { lines: 80, branches: 70, functions: 90 } } },
+      }
+      const baseline = {
+        summary: { score: 85, total_issues: 0, blocking: 0, status: 'passing' },
+        checks: { test: { coverage: { lines: 75, branches: 65, functions: 85 } } },
+      }
+
+      const result = compareCiResults(current, baseline)
+
+      expect(result.coverage.lines).toBe(5)
+      expect(result.coverage.branches).toBe(5)
+      expect(result.coverage.functions).toBe(5)
+    })
+
+    it('returns null coverage when not available', () => {
+      const current = { summary: { score: 85, total_issues: 0, blocking: 0, status: 'passing' } }
+      const baseline = { summary: { score: 85, total_issues: 0, blocking: 0, status: 'passing' } }
+
+      const result = compareCiResults(current, baseline)
+
+      expect(result.coverage).toBeNull()
     })
   })
 })

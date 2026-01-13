@@ -164,6 +164,37 @@ check_dependencies() {
 }
 
 # ==============================================================================
+# Scope Filtering
+# ==============================================================================
+
+# Check if a component should be executed based on CI_SCOPE
+# Usage: should_run_component "component_name"
+# Returns: 0 if should run, 1 if should skip
+should_run_component() {
+  local component="${1:-}"
+  local scope="${CI_SCOPE:-all}"
+
+  # Always run if scope is "all"
+  if [ "$scope" = "all" ]; then
+    return 0
+  fi
+
+  # Run if no component specified (global steps)
+  if [ -z "$component" ]; then
+    return 0
+  fi
+
+  # Run if component matches scope
+  if [ "$component" = "$scope" ]; then
+    return 0
+  fi
+
+  # Skip otherwise
+  log_debug "Skipping $component (scope: $scope)"
+  return 1
+}
+
+# ==============================================================================
 # Step Execution
 # ==============================================================================
 
@@ -177,6 +208,29 @@ run_step() {
   local component="${4:-}"
   local category="${5:-custom}"
   local log_file="/tmp/ci_${name}.log"
+
+  # Check if this step should run based on scope
+  if ! should_run_component "$component"; then
+    # Record skipped step
+    local step_json
+    step_json=$(jq -n \
+      --arg name "$name" \
+      --arg component "$component" \
+      --arg category "$category" \
+      '{
+        name: $name,
+        status: "skip",
+        exit_code: 0,
+        duration_ms: 0,
+        duration_human: "0ms",
+        category: $category,
+        skip_reason: "scope_filter"
+      } + (if $component != "" then {component: $component} else {} end)'
+    )
+    STEP_RESULTS+=("$step_json")
+    log_info "Skipping: $name (out of scope)"
+    return 0
+  fi
 
   # Capture start time (milliseconds since epoch)
   local start_time
@@ -375,6 +429,9 @@ export_ci_data() {
   # Create output directory
   mkdir -p "$(dirname "$output_file")"
 
+  # Get scope
+  local scope="${CI_SCOPE:-all}"
+
   # Generate intermediate data file for Node.js generator
   jq -n \
     --argjson steps "$steps_json" \
@@ -383,6 +440,7 @@ export_ci_data() {
     --arg started_at "$started_at" \
     --arg finished_at "$now" \
     --arg project_name "$project_name" \
+    --arg scope "$scope" \
     '{
       steps: $steps,
       errors: $errors,
@@ -393,6 +451,9 @@ export_ci_data() {
       },
       project: {
         name: $project_name
+      },
+      metadata: {
+        scope: $scope
       }
     }' > "$output_file"
 
