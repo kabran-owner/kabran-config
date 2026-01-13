@@ -1,3 +1,13 @@
+## [1.5.0](https://github.com/kabran-owner/kabran-config/compare/v1.4.0...v1.5.0) (2026-01-13)
+
+### Features
+
+* **validators:** add JSON output support for all validators ([44165c9](https://github.com/kabran-owner/kabran-config/commit/44165c969b4059a15a05560cad3193aae0781c42))
+
+### Documentation
+
+* add PROP-004 unified CI schema to roadmap ([a7d4762](https://github.com/kabran-owner/kabran-config/commit/a7d4762efb6b891c76f1ae5371da340419679465))
+
 ## [1.4.0](https://github.com/kabran-owner/kabran-config/compare/v1.3.0...v1.4.0) (2026-01-13)
 
 ### Features
