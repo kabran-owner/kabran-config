@@ -70,28 +70,20 @@
     "eslint-plugin-jsdoc": {
       "optional": true
     },
-    "eslint-plugin-jsx-a11y": {
-      "optional": true
-    },
-    "eslint-plugin-react-hooks": {
-      "optional": true
-    },
-    "eslint-plugin-react-refresh": {
-      "optional": true
-    },
-    "globals": {
-      "optional": true
-    },
     "prettier-plugin-tailwindcss": {
       "optional": true
     }
   },
   "scripts": {
-    "test": "bats tests/*.bats",
-    "test:ci": "bats --formatter tap tests/*.bats",
-    "test:watch": "watch -n 2 bats tests/*.bats"
+    "test": "npm run test:shell && npm run test:node",
+    "test:shell": "bats tests/shell/*.bats",
+    "test:node": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
+    "test:ci": "bats --formatter tap tests/shell/*.bats && vitest run --reporter=junit"
   },
   "devDependencies": {
-    "bats": "^1.11.0"
+    "bats": "^1.11.0",
+    "vitest": "^4.0.17"
   }
 }

@@ -3,9 +3,13 @@
 # Deploy Core Tests
 # ==============================================================================
 
+# Load helpers
+load '../helpers/bats-helpers.sh'
+
 setup() {
-  # Source the deploy-core.sh script
-  DEPLOY_CORE_PATH="$(dirname "$BATS_TEST_DIRNAME")/src/scripts/deploy/deploy-core.sh"
+  # Source the deploy-core.sh script (adjusted for tests/shell/ location)
+  PROJECT_ROOT_DIR="$(dirname "$(dirname "$BATS_TEST_DIRNAME")")"
+  DEPLOY_CORE_PATH="$PROJECT_ROOT_DIR/src/scripts/deploy/deploy-core.sh"
   source "$DEPLOY_CORE_PATH"
 
   # Set up test environment
@@ -57,7 +61,11 @@ setup() {
 
 @test "execute_stack succeeds with valid executable script" {
   # Create a test script
-  echo '#!/bin/bash\necho "Deploy successful"\nexit 0' > /tmp/test-deploy.sh
+  cat > /tmp/test-deploy.sh << 'EOF'
+#!/bin/bash
+echo "Deploy successful"
+exit 0
+EOF
   chmod +x /tmp/test-deploy.sh
 
   run execute_stack "test" "/tmp/test-deploy.sh" "up" 10
@@ -67,7 +75,11 @@ setup() {
 }
 
 @test "execute_stack fails with non-executable script" {
-  echo '#!/bin/bash\necho "Deploy"\nexit 0' > /tmp/test-deploy-noexec.sh
+  cat > /tmp/test-deploy-noexec.sh << 'EOF'
+#!/bin/bash
+echo "Deploy"
+exit 0
+EOF
 
   run execute_stack "test" "/tmp/test-deploy-noexec.sh" "up" 10
   assert_failure
@@ -94,39 +106,3 @@ setup() {
   fi
 }
 
-# ==============================================================================
-# Helper Functions
-# ==============================================================================
-
-assert() {
-  if ! "$@"; then
-    echo "Assertion failed: $*"
-    return 1
-  fi
-}
-
-assert_success() {
-  if [ "$status" -ne 0 ]; then
-    echo "Expected success but got exit code: $status"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_failure() {
-  if [ "$status" -eq 0 ]; then
-    echo "Expected failure but got success"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_output() {
-  if [ "$1" = "--partial" ]; then
-    if ! echo "$output" | grep -q "$2"; then
-      echo "Expected output to contain: $2"
-      echo "Actual output: $output"
-      return 1
-    fi
-  fi
-}

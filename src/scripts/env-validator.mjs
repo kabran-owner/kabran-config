@@ -14,8 +14,8 @@
  *   1 - Critical failure (.env committed or missing .env.example)
  */
 
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
+import {exec} from 'node:child_process';
+import {promisify} from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -23,11 +23,13 @@ const execAsync = promisify(exec);
 
 /**
  * Check if .env file is tracked in git (CRITICAL SECURITY ISSUE)
+ * @param {string} [cwd] - Directory to check (defaults to process.cwd())
+ * @returns {Promise<boolean>}
  */
-async function checkEnvInGit() {
+export async function checkEnvInGit(cwd = process.cwd()) {
   try {
     // Check if .env is in git index
-    const { stdout } = await execAsync('git ls-files .env 2>/dev/null || true');
+    const {stdout} = await execAsync('git ls-files .env 2>/dev/null || true', {cwd});
     return stdout.trim().length > 0;
   } catch {
     // If git command fails, assume not in repo or .env not tracked
@@ -37,8 +39,10 @@ async function checkEnvInGit() {
 
 /**
  * Detect if project uses environment variables
+ * @param {string} [cwd] - Directory to check (defaults to process.cwd())
+ * @returns {Promise<{usesEnv: boolean, files: string[]}>}
  */
-async function detectEnvUsage() {
+export async function detectEnvUsage(cwd = process.cwd()) {
   const patterns = [
     'process.env',      // Node.js
     'os.getenv',        // Python
@@ -55,7 +59,7 @@ async function detectEnvUsage() {
     const grepPattern = patterns.join('\\|');
     const command = `find . -type f \\( -name "*.{${extensionPattern}}" \\) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/.next/*" ! -path "*/build/*" -exec grep -l "${grepPattern}" {} \\; 2>/dev/null | head -5`;
 
-    const { stdout } = await execAsync(command);
+    const {stdout} = await execAsync(command, {cwd});
     const files = stdout.trim().split('\n').filter(Boolean);
 
     return {
@@ -64,32 +68,44 @@ async function detectEnvUsage() {
     };
   } catch {
     // If grep fails, assume no env usage
-    return { usesEnv: false, files: [] };
+    return {usesEnv: false, files: []};
   }
 }
 
 /**
  * Check if .env.example exists
+ * @param {string} [cwd] - Directory to check (defaults to process.cwd())
+ * @returns {{exists: boolean, path?: string, name?: string}}
  */
-function checkEnvExampleExists() {
-  const cwd = process.cwd();
+export function checkEnvExampleExists(cwd = process.cwd()) {
   const possibleNames = ['.env.example', '.env.sample', 'env.example'];
 
   for (const name of possibleNames) {
     const envPath = path.join(cwd, name);
     if (fs.existsSync(envPath)) {
-      return { exists: true, path: envPath, name };
+      return {exists: true, path: envPath, name};
     }
   }
 
-  return { exists: false };
+  return {exists: false};
 }
 
 /**
  * Parse .env.example and check for documentation
+ * @param {string} envPath - Path to .env.example file
+ * @returns {string[]} - Array of undocumented variable names
  */
-function validateEnvExample(envPath) {
+export function validateEnvExample(envPath) {
   const content = fs.readFileSync(envPath, 'utf-8');
+  return parseEnvContent(content);
+}
+
+/**
+ * Parse env content and return undocumented variables
+ * @param {string} content - Content of .env file
+ * @returns {string[]} - Array of undocumented variable names
+ */
+export function parseEnvContent(content) {
   const lines = content.split('\n');
 
   const undocumented = [];
@@ -128,94 +144,104 @@ function validateEnvExample(envPath) {
 
 /**
  * Main validation function
+ * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
+ * @param {boolean} [silent] - Suppress console output
+ * @returns {Promise<{valid: boolean, errors: string[], warnings: string[]}>}
  */
-async function validateEnv() {
-  console.log('🔐 Validating environment variables...\n');
+export async function validateEnv(cwd = process.cwd(), silent = false) {
+  const log = silent ? () => {} : console.log.bind(console);
+  const error = silent ? () => {} : console.error.bind(console);
 
-  let hasErrors = false;
+  log('Validating environment variables...\n');
+
+  const errors = [];
   const warnings = [];
 
   // CRITICAL: Check if .env is committed to git
-  console.log('🚨 Checking for .env in git...');
-  const envInGit = await checkEnvInGit();
+  log('Checking for .env in git...');
+  const envInGit = await checkEnvInGit(cwd);
   if (envInGit) {
-    console.error('  ❌ CRITICAL: .env file is tracked in git!');
-    console.error('     This is a SECURITY RISK - secrets should never be committed');
-    console.error('     Run: git rm --cached .env && echo ".env" >> .gitignore\n');
-    hasErrors = true;
+    error('  CRITICAL: .env file is tracked in git!');
+    error('     This is a SECURITY RISK - secrets should never be committed');
+    error('     Run: git rm --cached .env && echo ".env" >> .gitignore\n');
+    errors.push('.env file is tracked in git');
   } else {
-    console.log('  ✅ .env is not tracked in git\n');
+    log('  OK .env is not tracked in git\n');
   }
 
   // Detect if project uses environment variables
-  console.log('🔍 Detecting environment variable usage...');
-  const { usesEnv, files } = await detectEnvUsage();
+  log('Detecting environment variable usage...');
+  const {usesEnv, files} = await detectEnvUsage(cwd);
 
   if (!usesEnv) {
-    console.log('  ℹ️  No environment variable usage detected');
-    console.log('     .env.example not required\n');
-    console.log('✅ Environment validation passed\n');
-    return !hasErrors;
+    log('  No environment variable usage detected');
+    log('     .env.example not required\n');
+    log('Environment validation passed\n');
+    return {valid: errors.length === 0, errors, warnings};
   }
 
-  console.log(`  ✅ Found env usage in ${files.length} file(s):`);
-  files.forEach(file => console.log(`     - ${file}`));
-  console.log();
+  log(`  Found env usage in ${files.length} file(s):`);
+  files.forEach(file => log(`     - ${file}`));
+  log('');
 
   // Check if .env.example exists
-  console.log('📄 Checking for .env.example...');
-  const envExample = checkEnvExampleExists();
+  log('Checking for .env.example...');
+  const envExample = checkEnvExampleExists(cwd);
 
   if (!envExample.exists) {
-    console.error('  ❌ .env.example not found');
-    console.error('     Project uses environment variables but .env.example is missing');
-    console.error('     Create .env.example to document required variables\n');
-    hasErrors = true;
+    error('  .env.example not found');
+    error('     Project uses environment variables but .env.example is missing');
+    error('     Create .env.example to document required variables\n');
+    errors.push('.env.example not found but project uses environment variables');
   } else {
-    console.log(`  ✅ Found: ${envExample.name}\n`);
+    log(`  Found: ${envExample.name}\n`);
 
     // Validate documentation in .env.example
-    console.log('📋 Checking variable documentation...');
+    log('Checking variable documentation...');
     const undocumented = validateEnvExample(envExample.path);
 
     if (undocumented.length > 0) {
-      console.log(`  ⚠️  ${undocumented.length} variable(s) without comments:`);
+      log(`  ${undocumented.length} variable(s) without comments:`);
       undocumented.forEach(varName => {
-        console.log(`     - ${varName} (add comment above)`);
+        log(`     - ${varName} (add comment above)`);
         warnings.push(varName);
       });
-      console.log();
+      log('');
     } else {
-      console.log('  ✅ All variables are documented\n');
+      log('  All variables are documented\n');
     }
   }
 
   // Summary
-  console.log('='.repeat(50));
-  if (hasErrors) {
-    console.error('\n❌ Environment validation failed');
-    console.error('   Fix critical issues listed above\n');
-    return false;
+  log('='.repeat(50));
+  if (errors.length > 0) {
+    error('\nEnvironment validation failed');
+    error('   Fix critical issues listed above\n');
+    return {valid: false, errors, warnings};
   }
 
   if (warnings.length > 0) {
-    console.log('\n✅ Environment validation passed');
-    console.log(`⚠️  Consider documenting ${warnings.length} variable(s) in ${envExample.name}\n`);
+    log('\nEnvironment validation passed');
+    log(`Consider documenting ${warnings.length} variable(s) in ${envExample.name}\n`);
   } else {
-    console.log('\n✅ Environment validation passed - all checks OK!\n');
+    log('\nEnvironment validation passed - all checks OK!\n');
   }
 
-  return true;
+  return {valid: true, errors, warnings};
 }
 
 /**
- * Run validation
+ * Run validation when executed directly
  */
-try {
-  const success = await validateEnv();
-  process.exit(success ? 0 : 1);
-} catch (error) {
-  console.error('❌ Unexpected error:', error.message);
-  console.error(error.stack);
-  process.exit(1);
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
+  try {
+    const result = await validateEnv();
+    process.exit(result.valid ? 0 : 1);
+  } catch (err) {
+    console.error('Unexpected error:', err.message);
+    console.error(err.stack);
+    process.exit(1);
+  }
 }

@@ -3,9 +3,13 @@
 # CI Core Tests
 # ==============================================================================
 
+# Load helpers
+load '../helpers/bats-helpers.sh'
+
 setup() {
-  # Source the ci-core.sh script
-  CI_CORE_PATH="$(dirname "$BATS_TEST_DIRNAME")/src/scripts/ci/ci-core.sh"
+  # Source the ci-core.sh script (path adjusted for tests/shell/ location)
+  PROJECT_ROOT="$(dirname "$(dirname "$BATS_TEST_DIRNAME")")"
+  CI_CORE_PATH="$PROJECT_ROOT/src/scripts/ci/ci-core.sh"
   source "$CI_CORE_PATH"
 
   # Set up test environment
@@ -59,7 +63,8 @@ setup() {
 }
 
 @test "check_version_compatibility passes for compatible version" {
-  export CI_CORE_MIN_VERSION="1.5.0"
+  # CI_CORE_VERSION is 1.0.0 (from package.json), so min must be <= 1.0.0
+  export CI_CORE_MIN_VERSION="0.9.0"
   run check_version_compatibility
   assert_success
 }
@@ -230,39 +235,3 @@ setup() {
   rm /tmp/ci-test.json
 }
 
-# ==============================================================================
-# Helper Functions for Testing
-# ==============================================================================
-
-assert() {
-  if ! "$@"; then
-    echo "Assertion failed: $*"
-    return 1
-  fi
-}
-
-assert_success() {
-  if [ "$status" -ne 0 ]; then
-    echo "Expected success but got exit code: $status"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_failure() {
-  if [ "$status" -eq 0 ]; then
-    echo "Expected failure but got success"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_output() {
-  if [ "$1" = "--partial" ]; then
-    if ! echo "$output" | grep -q "$2"; then
-      echo "Expected output to contain: $2"
-      echo "Actual output: $output"
-      return 1
-    fi
-  fi
-}

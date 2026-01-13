@@ -18,31 +18,32 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 // Required sections (blocking if missing)
-const REQUIRED_SECTIONS = [
-  { pattern: /^#\s+.+/m, name: 'Project Title (# Heading)' },
-  { pattern: /^##\s+Installation/mi, name: 'Installation' },
-  { pattern: /^##\s+Usage/mi, name: 'Usage' },
-  { pattern: /^##\s+License/mi, name: 'License' },
+export const REQUIRED_SECTIONS = [
+  {pattern: /^#\s+.+/m, name: 'Project Title (# Heading)'},
+  {pattern: /^##\s+Installation/mi, name: 'Installation'},
+  {pattern: /^##\s+Usage/mi, name: 'Usage'},
+  {pattern: /^##\s+License/mi, name: 'License'},
 ];
 
 // Recommended sections (warnings only)
-const RECOMMENDED_SECTIONS = [
-  { pattern: /^##\s+Development/mi, name: 'Development' },
-  { pattern: /^##\s+Contributing/mi, name: 'Contributing' },
-  { pattern: /^##\s+Testing/mi, name: 'Testing' },
+export const RECOMMENDED_SECTIONS = [
+  {pattern: /^##\s+Development/mi, name: 'Development'},
+  {pattern: /^##\s+Contributing/mi, name: 'Contributing'},
+  {pattern: /^##\s+Testing/mi, name: 'Testing'},
 ];
 
 /**
- * Find README.md in project root
+ * Find README.md in directory
+ * @param {string} [cwd] - Directory to search in (defaults to process.cwd())
+ * @returns {{path: string, content: string} | null}
  */
-function findReadme() {
-  const cwd = process.cwd();
+export function findReadme(cwd = process.cwd()) {
   const possibleNames = ['README.md', 'readme.md', 'Readme.md'];
 
   for (const name of possibleNames) {
     const readmePath = path.join(cwd, name);
     if (fs.existsSync(readmePath)) {
-      return { path: readmePath, content: fs.readFileSync(readmePath, 'utf-8') };
+      return {path: readmePath, content: fs.readFileSync(readmePath, 'utf-8')};
     }
   }
 
@@ -51,81 +52,96 @@ function findReadme() {
 
 /**
  * Check if section exists in content
+ * @param {string} content - README content
+ * @param {{pattern: RegExp, name: string}} section - Section to check
+ * @returns {boolean}
  */
-function checkSection(content, section) {
+export function checkSection(content, section) {
   return section.pattern.test(content);
 }
 
 /**
  * Main validation function
+ * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
+ * @param {boolean} [silent] - Suppress console output
+ * @returns {{valid: boolean, errors: string[], warnings: string[]}}
  */
-function validateReadme() {
-  console.log('📄 Validating README.md...\n');
+export function validateReadme(cwd = process.cwd(), silent = false) {
+  const log = silent ? () => {} : console.log.bind(console);
+  const error = silent ? () => {} : console.error.bind(console);
 
-  // Check if README exists
-  const readme = findReadme();
-  if (!readme) {
-    console.error('❌ Error: README.md not found in project root');
-    console.error('   Create a README.md file with project documentation\n');
-    return false;
-  }
+  log('Validating README.md...\n');
 
-  console.log(`✅ Found: ${path.basename(readme.path)}\n`);
-
-  const { content } = readme;
-  let hasErrors = false;
+  const errors = [];
   const warnings = [];
 
+  // Check if README exists
+  const readme = findReadme(cwd);
+  if (!readme) {
+    errors.push('README.md not found in project root');
+    error('Error: README.md not found in project root');
+    error('   Create a README.md file with project documentation\n');
+    return {valid: false, errors, warnings};
+  }
+
+  log(`Found: ${path.basename(readme.path)}\n`);
+
+  const {content} = readme;
+
   // Check required sections
-  console.log('📋 Checking required sections:');
+  log('Checking required sections:');
   for (const section of REQUIRED_SECTIONS) {
     const exists = checkSection(content, section);
     if (exists) {
-      console.log(`  ✅ ${section.name}`);
+      log(`  OK ${section.name}`);
     } else {
-      console.error(`  ❌ Missing: ${section.name}`);
-      hasErrors = true;
+      error(`  Missing: ${section.name}`);
+      errors.push(`Missing required section: ${section.name}`);
     }
   }
 
   // Check recommended sections
-  console.log('\n📋 Checking recommended sections:');
+  log('\nChecking recommended sections:');
   for (const section of RECOMMENDED_SECTIONS) {
     const exists = checkSection(content, section);
     if (exists) {
-      console.log(`  ✅ ${section.name}`);
+      log(`  OK ${section.name}`);
     } else {
-      console.log(`  ⚠️  Missing: ${section.name} (recommended)`);
+      log(`  Warning: ${section.name} (recommended)`);
       warnings.push(section.name);
     }
   }
 
   // Summary
-  console.log('\n' + '='.repeat(50));
-  if (hasErrors) {
-    console.error('\n❌ README validation failed');
-    console.error('   Add missing required sections to README.md\n');
-    return false;
+  log('\n' + '='.repeat(50));
+  if (errors.length > 0) {
+    error('\nREADME validation failed');
+    error('   Add missing required sections to README.md\n');
+    return {valid: false, errors, warnings};
   }
 
   if (warnings.length > 0) {
-    console.log('\n✅ README validation passed');
-    console.log(`⚠️  ${warnings.length} recommended section(s) missing`);
-    console.log('   Consider adding: ' + warnings.join(', ') + '\n');
+    log('\nREADME validation passed');
+    log(`Warning: ${warnings.length} recommended section(s) missing`);
+    log('   Consider adding: ' + warnings.join(', ') + '\n');
   } else {
-    console.log('\n✅ README validation passed - all sections present!\n');
+    log('\nREADME validation passed - all sections present!\n');
   }
 
-  return true;
+  return {valid: true, errors, warnings};
 }
 
 /**
- * Run validation
+ * Run validation when executed directly
  */
-try {
-  const success = validateReadme();
-  process.exit(success ? 0 : 1);
-} catch (error) {
-  console.error('❌ Unexpected error:', error.message);
-  process.exit(1);
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
+  try {
+    const result = validateReadme();
+    process.exit(result.valid ? 0 : 1);
+  } catch (err) {
+    console.error('Unexpected error:', err.message);
+    process.exit(1);
+  }
 }
