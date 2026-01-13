@@ -1,16 +1,48 @@
-## [1.6.0](https://github.com/kabran-owner/kabran-config/compare/v1.5.0...v1.6.0) (2026-01-13)
+---
+title: [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
+id: 01KEWPJKYF92BGEA9FHQB7BNYN
+type: guide
+status: active
+tags: [documentation, guide]
+version: 0.1.0
+created_at: 2026-01-13
+updated_at: 2026-01-13
+---
+
+## [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
 
 ### Features
 
-* **ci:** add scope filtering, coverage aggregation, and PR comment support ([2dbad9c](https://github.com/kabran-owner/kabran-config/commit/2dbad9c0edc0622490c22226b8232a87453ff872))
+* **ci:** add automatic trace_id generation for local CI runs (GAP-001)
+  * Generate W3C-compliant trace_id when TRACEPARENT is not set
+  * Support for OTEL_TRACE_ID and GITHUB_RUN_ID as fallback sources
+  * Export TRACEPARENT for subprocess propagation
+  * Include trace source in ci-result.json (local/github/otel_env/external)
+
+* **ci:** populate errors_recorded in telemetry extension (GAP-002)
+  * Count failed steps as errors_recorded in ci-result.json
+  * spans_exported documented as 0 until OTel export is implemented
+
+### Documentation
+
+* **telemetry:** add comprehensive README for telemetry package (GAP-003)
+  * Quick start guides for Node.js, Frontend, and Edge runtimes
+  * Configuration reference with all environment variables
+  * Module reference for all exports
+  * Best practices and troubleshooting guide
 
 ## [1.7.0](https://github.com/kabran-owner/kabran-config/compare/v1.6.0...v1.7.0) (2026-01-13)
-
 
 ### Features
 
 * **ci:** migrate from semantic-release to release-please ([#9](https://github.com/kabran-owner/kabran-config/issues/9)) ([a676c4d](https://github.com/kabran-owner/kabran-config/commit/a676c4d79fd2a0ccae4b2765df93121a833a1621))
 * **telemetry:** add unified telemetry package with OTel integration ([#8](https://github.com/kabran-owner/kabran-config/issues/8)) ([80b0f05](https://github.com/kabran-owner/kabran-config/commit/80b0f05241c88530dee23efcc038ec87b07eaf27))
+
+## [1.6.0](https://github.com/kabran-owner/kabran-config/compare/v1.5.0...v1.6.0) (2026-01-13)
+
+### Features
+
+* **ci:** add scope filtering, coverage aggregation, and PR comment support ([2dbad9c](https://github.com/kabran-owner/kabran-config/commit/2dbad9c0edc0622490c22226b8232a87453ff872))
 
 ## [1.5.0](https://github.com/kabran-owner/kabran-config/compare/v1.4.0...v1.5.0) (2026-01-13)
 
@@ -44,73 +76,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Quality Standard Validator** (PROP-002)
-  - New `quality-standard-validator.mjs` script to validate `docs/quality/001-quality-standard.md`
-  - Validates required sections: Frontmatter, ESLint Rules, Prettier Rules, TypeScript Rules
-  - Detects undocumented overrides in ESLint config
-  - Detects documented overrides missing from code
-  - Integrated with `kabran-setup` CLI - automatically creates quality-standard.md
+* **Quality Standard Validator** (PROP-002)
+  * New `quality-standard-validator.mjs` script to validate `docs/quality/001-quality-standard.md`
+  * Validates required sections: Frontmatter, ESLint Rules, Prettier Rules, TypeScript Rules
+  * Detects undocumented overrides in ESLint config
+  * Detects documented overrides missing from code
+  * Integrated with `kabran-setup` CLI - automatically creates quality-standard.md
 
-- **Automated Releases with semantic-release**
-  - GitHub Actions workflow for automated npm publishing
-  - Automatic version bumping based on conventional commits
-  - Automatic CHANGELOG generation
-  - GitHub releases created automatically
+* **Automated Releases with semantic-release**
+  * GitHub Actions workflow for automated npm publishing
+  * Automatic version bumping based on conventional commits
+  * Automatic CHANGELOG generation
+  * GitHub releases created automatically
 
 ### Fixed
 
-- Corrected bin path format in package.json
+* Corrected bin path format in package.json
 
 ## [1.2.0] - 2026-01-13
 
 ### Added
 
-- **Project Templates & Setup CLI** (PROP-001)
-  - New `npx kabran-setup` CLI for automated project configuration
-  - Templates for GitHub Actions workflows (CI, commitlint, PR validation)
-  - Templates for Husky hooks (pre-commit, commit-msg, pre-push)
-  - Config file templates using re-export pattern for automatic updates
-  - Support for Node.js (`--type=node`), React (`--type=react`), and base projects
-  - Sync modes (`--sync-workflows`, `--sync-husky`) for updating existing projects
-  - Dry-run mode (`--dry-run`) for previewing changes
-  - Force mode (`--force`) for overwriting existing files
+* **Project Templates & Setup CLI** (PROP-001)
+  * New `npx kabran-setup` CLI for automated project configuration
+  * Templates for GitHub Actions workflows (CI, commitlint, PR validation)
+  * Templates for Husky hooks (pre-commit, commit-msg, pre-push)
+  * Config file templates using re-export pattern for automatic updates
+  * Support for Node.js (`--type=node`), React (`--type=react`), and base projects
+  * Sync modes (`--sync-workflows`, `--sync-husky`) for updating existing projects
+  * Dry-run mode (`--dry-run`) for previewing changes
+  * Force mode (`--force`) for overwriting existing files
 
-- Quality tooling roadmap (`docs/ROADMAP.md`)
+* Quality tooling roadmap (`docs/ROADMAP.md`)
 
 ## [1.1.1] - 2026-01-13
 
 ### Fixed
 
-- `license:check` false negative when license-checker is installed (BUG-001)
-  - `license-checker --version` returns exit code 1 even when successful
-  - Changed availability check to use `--summary` instead
+* `license:check` false negative when license-checker is installed (BUG-001)
+  * `license-checker --version` returns exit code 1 even when successful
+  * Changed availability check to use `--summary` instead
 
 ## [1.1.0] - 2026-01-13
 
 ### Fixed
 
-- Test alignment and critical bug fixes
-- npm compatibility in monorepo fixture for CI
-- package-lock.json sync with peerDependencies
+* Test alignment and critical bug fixes
+* npm compatibility in monorepo fixture for CI
+* package-lock.json sync with peerDependencies
 
 ## [1.0.0] - 2026-01-13
 
 ### Added
 
-- Initial public release on npm registry
-- Base ESLint configuration with flat config support
-- Node.js ESLint configuration
-- React ESLint configuration
-- Prettier configuration
-- TypeScript configurations (base, node, react)
-- Commitlint configuration
-- Lint-staged configuration
-- Environment validator script
-- README validator script
-- License check script
-- Dependency report script
-- CI/CD standardization scripts (ci-core.sh, ci-runner.sh)
-- Deploy scripts (deploy-core.sh, deploy-runner.sh)
+* Initial public release on npm registry
+* Base ESLint configuration with flat config support
+* Node.js ESLint configuration
+* React ESLint configuration
+* Prettier configuration
+* TypeScript configurations (base, node, react)
+* Commitlint configuration
+* Lint-staged configuration
+* Environment validator script
+* README validator script
+* License check script
+* Dependency report script
+* CI/CD standardization scripts (ci-core.sh, ci-runner.sh)
+* Deploy scripts (deploy-core.sh, deploy-runner.sh)
 
 ### Notes
 

@@ -27,6 +27,8 @@ NC='\033[0m'
 declare -a ERRORS=()
 declare -a STEP_RESULTS=()
 CI_START_TIME=""
+CI_TRACE_ID=""
+CI_SPAN_ID=""
 
 # ==============================================================================
 # Logging Functions
@@ -56,6 +58,128 @@ log_debug() {
   if [ "${CI_LOG_LEVEL:-INFO}" = "DEBUG" ]; then
     echo -e "${GRAY}[DEBUG]${NC} $1"
   fi
+}
+
+# ==============================================================================
+# Trace Context Functions (OpenTelemetry W3C Trace Context)
+# ==============================================================================
+
+# Generate a random hex string of specified length
+# Usage: generate_hex_string 32
+generate_hex_string() {
+  local length="${1:-32}"
+  # Try multiple methods for generating random hex
+  if command -v openssl &>/dev/null; then
+    openssl rand -hex "$((length / 2))" 2>/dev/null
+  elif [ -r /dev/urandom ]; then
+    head -c "$((length / 2))" /dev/urandom | od -An -tx1 | tr -d ' \n' | head -c "$length"
+  else
+    # Fallback: use date + process ID + random
+    local seed="$$$(date +%s%N 2>/dev/null || date +%s)"
+    echo "$seed" | md5sum 2>/dev/null | head -c "$length" || echo "$seed" | head -c "$length"
+  fi
+}
+
+# Generate a W3C trace ID (32 hex chars = 128 bits)
+# Usage: generate_trace_id
+generate_trace_id() {
+  generate_hex_string 32
+}
+
+# Generate a W3C span ID (16 hex chars = 64 bits)
+# Usage: generate_span_id
+generate_span_id() {
+  generate_hex_string 16
+}
+
+# Initialize trace context for the CI run
+# Sets TRACEPARENT env var if not already set
+# Format: 00-{trace_id}-{span_id}-{flags}
+# Usage: setup_trace_context
+setup_trace_context() {
+  # Check if trace context already exists from environment
+  if [ -n "${TRACEPARENT:-}" ]; then
+    log_debug "Using existing TRACEPARENT: $TRACEPARENT"
+    # Extract trace_id and span_id from existing TRACEPARENT
+    CI_TRACE_ID=$(echo "$TRACEPARENT" | cut -d'-' -f2)
+    CI_SPAN_ID=$(echo "$TRACEPARENT" | cut -d'-' -f3)
+    return 0
+  fi
+
+  # Check for direct trace ID from environment
+  if [ -n "${OTEL_TRACE_ID:-}" ]; then
+    log_debug "Using OTEL_TRACE_ID: $OTEL_TRACE_ID"
+    CI_TRACE_ID="$OTEL_TRACE_ID"
+    CI_SPAN_ID=$(generate_span_id)
+    TRACEPARENT="00-${CI_TRACE_ID}-${CI_SPAN_ID}-01"
+    export TRACEPARENT
+    return 0
+  fi
+
+  # Check for GitHub Actions run ID (use as fallback correlation)
+  if [ -n "${GITHUB_RUN_ID:-}" ]; then
+    log_debug "Using GitHub run ID for trace correlation"
+    # Create deterministic trace_id from GitHub run info
+    local gh_seed="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
+    CI_TRACE_ID=$(echo "$gh_seed" | md5sum | head -c 32)
+    CI_SPAN_ID=$(generate_span_id)
+    TRACEPARENT="00-${CI_TRACE_ID}-${CI_SPAN_ID}-01"
+    export TRACEPARENT
+    log_debug "Generated TRACEPARENT from GitHub: $TRACEPARENT"
+    return 0
+  fi
+
+  # Generate new trace context for local execution
+  log_debug "Generating new trace context for local CI run"
+  CI_TRACE_ID=$(generate_trace_id)
+  CI_SPAN_ID=$(generate_span_id)
+  TRACEPARENT="00-${CI_TRACE_ID}-${CI_SPAN_ID}-01"
+  export TRACEPARENT
+
+  log_info "Trace ID: ${CI_TRACE_ID:0:8}... (local)"
+  log_debug "Full TRACEPARENT: $TRACEPARENT"
+  return 0
+}
+
+# Get the current trace ID
+# Usage: get_trace_id
+get_trace_id() {
+  echo "${CI_TRACE_ID:-}"
+}
+
+# Get trace context info for metadata
+# Usage: get_trace_context_json
+get_trace_context_json() {
+  local trace_id="${CI_TRACE_ID:-}"
+  local span_id="${CI_SPAN_ID:-}"
+  local traceparent="${TRACEPARENT:-}"
+
+  if [ -z "$trace_id" ]; then
+    echo "null"
+    return
+  fi
+
+  # Determine source of trace context
+  local source="local"
+  if [ -n "${GITHUB_RUN_ID:-}" ]; then
+    source="github"
+  elif [ -n "${OTEL_TRACE_ID:-}" ]; then
+    source="otel_env"
+  elif [ -n "${TRACEPARENT:-}" ] && [ "${CI_TRACE_ID:-}" != "$(echo "$TRACEPARENT" | cut -d'-' -f2)" ]; then
+    source="external"
+  fi
+
+  jq -n \
+    --arg trace_id "$trace_id" \
+    --arg span_id "$span_id" \
+    --arg traceparent "$traceparent" \
+    --arg source "$source" \
+    '{
+      trace_id: $trace_id,
+      span_id: $span_id,
+      traceparent: $traceparent,
+      source: $source
+    }'
 }
 
 # ==============================================================================
@@ -432,6 +556,10 @@ export_ci_data() {
   # Get scope
   local scope="${CI_SCOPE:-all}"
 
+  # Get trace context
+  local trace_context
+  trace_context=$(get_trace_context_json)
+
   # Generate intermediate data file for Node.js generator
   jq -n \
     --argjson steps "$steps_json" \
@@ -441,6 +569,7 @@ export_ci_data() {
     --arg finished_at "$now" \
     --arg project_name "$project_name" \
     --arg scope "$scope" \
+    --argjson trace_context "$trace_context" \
     '{
       steps: $steps,
       errors: $errors,
@@ -454,7 +583,8 @@ export_ci_data() {
       },
       metadata: {
         scope: $scope
-      }
+      },
+      trace_context: $trace_context
     }' > "$output_file"
 
   log_debug "CI data exported to: $output_file"

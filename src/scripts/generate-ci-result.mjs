@@ -177,8 +177,9 @@ export function generateCiResult(input) {
   // Determine exit code
   const exitCode = executionStats.steps_failed > 0 ? 1 : 0
 
-  // Get trace ID if available
-  const traceId = getTraceId()
+  // Get trace ID - prefer trace_context from input (shell-generated) over env vars
+  const traceContext = input.trace_context || {}
+  const traceId = traceContext.trace_id || getTraceId()
 
   // Build meta object
   const meta = {
@@ -198,7 +199,19 @@ export function generateCiResult(input) {
   // Build extensions with telemetry if trace_id exists
   const extensions = { ...(metadata.extensions || {}) }
   if (traceId) {
-    extensions.telemetry = buildTelemetryExtension(traceId)
+    // Count errors from failed steps
+    const errorsRecorded = executionStats.steps_failed || 0
+
+    extensions.telemetry = buildTelemetryExtension(traceId, {
+      errorsRecorded,
+      // spans_exported remains 0 until we implement actual OTel export (GAP-004/Q12)
+      spansExported: 0,
+    })
+
+    // Add trace source info if available
+    if (traceContext.source) {
+      extensions.telemetry.trace_source = traceContext.source
+    }
   }
 
   // Build result object
