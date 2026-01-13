@@ -16,6 +16,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-13
+
+### Added
+
+- **Project Templates & Setup CLI** (PROP-001)
+  - New `npx kabran-setup` CLI for automated project configuration
+  - Templates for GitHub Actions workflows (CI, commitlint, PR validation)
+  - Templates for Husky hooks (pre-commit, commit-msg, pre-push)
+  - Config file templates using re-export pattern for automatic updates
+  - Support for Node.js (`--type=node`), React (`--type=react`), and base projects
+  - Sync modes (`--sync-workflows`, `--sync-husky`) for updating existing projects
+  - Dry-run mode (`--dry-run`) for previewing changes
+  - Force mode (`--force`) for overwriting existing files
+
+- Quality tooling roadmap (`docs/ROADMAP.md`)
+
 ## [1.1.1] - 2026-01-13
 
 ### Fixed

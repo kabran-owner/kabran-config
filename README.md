@@ -49,6 +49,102 @@ npm install --save-dev eslint-plugin-jsdoc@^50
 
 ---
 
+## Project Templates (Recommended)
+
+The fastest way to set up a new project with Kabran quality standards.
+
+### Quick Start
+
+```bash
+# Install kabran-config
+npm install -D @kabran-tecnologia/kabran-config
+
+# Run setup CLI
+npx kabran-setup              # Default: Node.js project
+npx kabran-setup --type=react # React project
+npx kabran-setup --type=base  # Base TypeScript
+```
+
+This will create:
+
+- GitHub workflows (`ci.yml`, `commitlint.yml`, `validate-pr-source.yml`)
+- Husky hooks (`pre-commit`, `commit-msg`, `pre-push`)
+- Config files (`eslint.config.mjs`, `prettier.config.mjs`, `commitlint.config.mjs`, `lint-staged.config.mjs`)
+
+### CLI Options
+
+```bash
+npx kabran-setup [options]
+
+Options:
+  --type=<type>      Project type: node, react, base (default: node)
+  --skip-husky       Don't copy husky hooks
+  --skip-workflows   Don't copy GitHub workflow files
+  --sync-workflows   Overwrite existing workflow files
+  --sync-husky       Overwrite existing husky hooks
+  --force            Overwrite all existing files
+  --dry-run          Preview changes without modifying files
+  --help             Show help message
+```
+
+### Update Strategy
+
+| Type | Behavior | How to Update |
+|------|----------|---------------|
+| **Config files** | Re-export from kabran-config | Automatic via `npm update` |
+| **Workflows** | Copied once | Manual via `npx kabran-setup --sync-workflows` |
+| **Husky hooks** | Copied once | Manual via `npx kabran-setup --sync-husky` |
+
+**Why this strategy?**
+
+- **Configs:** Should always be in sync with Kabran standards. Re-export pattern ensures automatic updates.
+- **Workflows/Husky:** May need project-specific customization (secrets, extra steps). Copy allows local control.
+
+### Post-Setup Checklist
+
+After running `kabran-setup`:
+
+1. Install peer dependencies (see Installation section above)
+2. Initialize husky: `npx husky init`
+3. Add scripts to `package.json`:
+
+   ```json
+   {
+     "scripts": {
+       "lint": "eslint .",
+       "lint:fix": "eslint . --fix",
+       "type-check": "tsc --noEmit",
+       "prepare": "husky"
+     }
+   }
+   ```
+
+4. Commit your changes
+
+### Examples
+
+```bash
+# Setup new Node.js API project
+npx kabran-setup --type=node
+
+# Setup new React frontend
+npx kabran-setup --type=react
+
+# Update only workflows (after kabran-config update)
+npx kabran-setup --sync-workflows
+
+# Update only husky hooks
+npx kabran-setup --sync-husky
+
+# Preview what would be created
+npx kabran-setup --dry-run
+
+# Force overwrite all files
+npx kabran-setup --force
+```
+
+---
+
 ## Usage
 
 ### ESLint
@@ -736,6 +832,7 @@ For detailed migration instructions from existing CI/CD scripts, see [CI-CD-MIGR
 | `@kabran-tecnologia/kabran-config/scripts/env-validator` | Environment variables validator (blocking) |
 | `@kabran-tecnologia/kabran-config/scripts/ci/*` | Standardized CI pipeline runner and core functions |
 | `@kabran-tecnologia/kabran-config/scripts/deploy/*` | Standardized deployment orchestration |
+| `@kabran-tecnologia/kabran-config/scripts/setup` | Project setup CLI (`npx kabran-setup`) |
 
 ---
 

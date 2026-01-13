@@ -1,0 +1,25 @@
+name: Validate PR Source
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-source:
+    name: Validate Source Branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check PR source branch
+        run: |
+          SOURCE_BRANCH="${{ github.head_ref }}"
+
+          if [[ "$SOURCE_BRANCH" == "staging" ]] || [[ "$SOURCE_BRANCH" == hotfix/* ]]; then
+            echo "✅ Branch permitida: $SOURCE_BRANCH"
+            exit 0
+          fi
+
+          echo "❌ PRs para main só podem vir de:"
+          echo "   - staging"
+          echo "   - hotfix/*"
+          exit 1

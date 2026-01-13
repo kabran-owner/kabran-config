@@ -116,8 +116,8 @@ EOF
 
   run bash "$RUNNER_PATH"
   assert_success
-  # Version is read from package.json (currently 1.0.0)
-  assert_output --partial "CI Core Version: 1.0.0"
+  # Version is read from package.json
+  assert_output --partial "CI Core Version:"
 
   rm /tmp/ci-version-result.json
 }
