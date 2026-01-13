@@ -1,0 +1,10 @@
+{
+  "name": "mock-empty-project",
+  "version": "1.0.0",
+  "description": "Empty mock project for testing kabran-setup",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "vitest",
+    "build": "tsc"
+  }
+}
