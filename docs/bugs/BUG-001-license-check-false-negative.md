@@ -2,9 +2,9 @@
 title: "BUG-001: license:check reports 'not found' when license-checker is installed"
 id: 01KEVRMXN4QJKP8GHTWZ2YDSAB
 type: bug
-status: open
+status: fixed
 tags: [javascript]
-version: 0.1.1
+version: 0.1.2
 created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
