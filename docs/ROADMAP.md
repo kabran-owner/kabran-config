@@ -4,7 +4,7 @@ id: 01KEW1S1DY2Y6247E4B4D62PR8
 type: standard
 status: active
 tags: [guidelines, standard]
-version: 0.1.4
+version: 0.1.6
 created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
@@ -213,13 +213,50 @@ v1.2.0                                          v1.3.0
 
 ---
 
+## Phase 4: PROP-004 - Unified CI Result Schema
+
+**Target:** v1.4.0 → v1.6.0
+**Proposta:** [PROP-004-ci-observability-metrics.md](./proposals/PROP-004-ci-observability-metrics.md)
+
+> Unifica PROP-003 (Quality Status) e PROP-004 (CI Observability) em um schema único e flexível.
+
+### 4.1 Schema & Core (v1.4.0) ✅
+
+- [x] Criar JSON Schema formal `ci-result.v2.schema.json`
+- [x] Criar `generate-ci-result.mjs`
+- [x] Criar `ci-result-utils.mjs` (score, status)
+- [x] Modificar `ci-core.sh` para capturar timing por step
+- [x] Modificar `ci-runner.sh` para gerar JSON via node script
+- [x] Testes unitários para schema e utils
+
+### 4.2 Validators Integration (v1.5.0)
+
+- [ ] Adicionar `--json` em `license-check.mjs`
+- [ ] Adicionar export JSON em `readme-validator.mjs`
+- [ ] Adicionar export JSON em `env-validator.mjs`
+- [ ] Adicionar export JSON em `quality-standard-validator.mjs`
+- [ ] Integrar validators no `generate-ci-result.mjs`
+- [ ] Testes unitários para cada validator JSON output
+
+### 4.3 CI Integration (v1.6.0)
+
+- [ ] Scope filtering (`--scope=app`)
+- [ ] Coverage aggregation
+- [ ] PR comment generation script
+- [ ] GitHub Action template
+
+---
+
 ## Progress Tracking
 
 | Phase | Status | Progress |
 |-------|--------|----------|
 | PROP-001 | Completed | 25/25 |
 | PROP-002 | Completed | 20/20 |
-| PROP-003 | Not Started | 0/30 |
+| PROP-003 | Superseded by PROP-004 | - |
+| PROP-004 Phase 1 | Completed (v1.4.0) | 6/6 |
+| PROP-004 Phase 2 | Not Started | 0/6 |
+| PROP-004 Phase 3 | Not Started | 0/4 |
 
 ---
 
