@@ -13,6 +13,9 @@ import {
   setupWorkflows,
   setupHusky,
   setupConfigs,
+  setupQualityStandard,
+  getCurrentDate,
+  getPackageVersion,
   runSetup,
   getEslintConfig,
 } from '../../src/scripts/setup.mjs';
@@ -569,9 +572,127 @@ describe('setup CLI', () => {
       expect(summary.workflows.skipped).toBe(3);
       expect(summary.husky.skipped).toBe(3);
       expect(summary.configs.skipped).toBe(4);
+      expect(summary.qualityStandard.skipped).toBe(1);
 
       // Content should be the same
       expect(readFileSync(join(tempDir, 'eslint.config.mjs'), 'utf-8')).toBe(firstContent);
+    });
+
+    it('should create quality-standard.md by default', () => {
+      const summary = runSetup(tempDir, {type: 'node'});
+
+      expect(summary.qualityStandard.created).toBe(1);
+      expect(existsSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'))).toBe(true);
+    });
+
+    it('should skip quality-standard with --skip-quality-standard', () => {
+      const summary = runSetup(tempDir, {type: 'node', skipQualityStandard: true});
+
+      expect(summary.qualityStandard.created).toBe(0);
+      expect(summary.qualityStandard.skipped).toBe(0);
+      expect(existsSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'))).toBe(false);
+    });
+  });
+
+  describe('parseArgs with --skip-quality-standard', () => {
+    it('should parse --skip-quality-standard', () => {
+      const options = parseArgs(['--skip-quality-standard']);
+      expect(options.skipQualityStandard).toBe(true);
+    });
+
+    it('should default skipQualityStandard to false', () => {
+      const options = parseArgs([]);
+      expect(options.skipQualityStandard).toBe(false);
+    });
+  });
+
+  describe('getCurrentDate', () => {
+    it('should return date in YYYY-MM-DD format', () => {
+      const date = getCurrentDate();
+      expect(date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+  });
+
+  describe('getPackageVersion', () => {
+    it('should return a valid version string', () => {
+      const version = getPackageVersion();
+      expect(version).toMatch(/^\d+\.\d+\.\d+/);
+    });
+  });
+
+  describe('setupQualityStandard', () => {
+    const templatesDir = getTemplatesDir();
+
+    it('should create quality-standard.md', () => {
+      const results = setupQualityStandard(tempDir, templatesDir, {type: 'node'});
+
+      expect(results.created).toBe(1);
+      expect(existsSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'))).toBe(true);
+    });
+
+    it('should replace YYYY-MM-DD placeholder with actual date', () => {
+      setupQualityStandard(tempDir, templatesDir, {type: 'node'});
+
+      const content = readFileSync(
+        join(tempDir, 'docs', 'quality', '001-quality-standard.md'),
+        'utf-8'
+      );
+      expect(content).not.toContain('YYYY-MM-DD');
+      expect(content).toMatch(/\d{4}-\d{2}-\d{2}/);
+    });
+
+    it('should replace X.Y.Z placeholder with version', () => {
+      setupQualityStandard(tempDir, templatesDir, {type: 'node'});
+
+      const content = readFileSync(
+        join(tempDir, 'docs', 'quality', '001-quality-standard.md'),
+        'utf-8'
+      );
+      expect(content).not.toContain('X.Y.Z');
+    });
+
+    it('should replace preset placeholder with type', () => {
+      setupQualityStandard(tempDir, templatesDir, {type: 'react'});
+
+      const content = readFileSync(
+        join(tempDir, 'docs', 'quality', '001-quality-standard.md'),
+        'utf-8'
+      );
+      expect(content).toContain('react');
+      expect(content).not.toContain('node / react / base');
+    });
+
+    it('should skip existing file without force', () => {
+      // Create existing file
+      mkdirSync(join(tempDir, 'docs', 'quality'), {recursive: true});
+      writeFileSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'), 'existing');
+
+      const results = setupQualityStandard(tempDir, templatesDir, {type: 'node'});
+
+      expect(results.skipped).toBe(1);
+      expect(
+        readFileSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'), 'utf-8')
+      ).toBe('existing');
+    });
+
+    it('should overwrite with --force', () => {
+      // Create existing file
+      mkdirSync(join(tempDir, 'docs', 'quality'), {recursive: true});
+      writeFileSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'), 'existing');
+
+      const results = setupQualityStandard(tempDir, templatesDir, {type: 'node', force: true});
+
+      expect(results.overwritten).toBe(1);
+      expect(
+        readFileSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'), 'utf-8')
+      ).not.toBe('existing');
+    });
+
+    it('should not create file in dry-run mode', () => {
+      const results = setupQualityStandard(tempDir, templatesDir, {type: 'node', dryRun: true});
+
+      expect(results.created).toBe(1);
+      expect(existsSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'))).toBe(false);
     });
   });
 });

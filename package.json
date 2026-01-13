@@ -27,7 +27,8 @@
     "./scripts/env-validator": "./src/scripts/env-validator.mjs",
     "./scripts/ci/*": "./src/scripts/ci/*",
     "./scripts/deploy/*": "./src/scripts/deploy/*",
-    "./scripts/setup": "./src/scripts/setup.mjs"
+    "./scripts/setup": "./src/scripts/setup.mjs",
+    "./scripts/quality-standard-validator": "./src/scripts/quality-standard-validator.mjs"
   },
   "files": [
     "src",
@@ -89,6 +90,10 @@
   },
   "devDependencies": {
     "bats": "^1.11.0",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.17",
+    "semantic-release": "^24.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "conventional-changelog-conventionalcommits": "^8.0.0"
   }
 }

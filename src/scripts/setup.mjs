@@ -76,6 +76,7 @@ export function parseArgs(args) {
     type: 'node',
     skipHusky: false,
     skipWorkflows: false,
+    skipQualityStandard: false,
     syncWorkflows: false,
     syncHusky: false,
     force: false,
@@ -90,6 +91,8 @@ export function parseArgs(args) {
       options.skipHusky = true;
     } else if (arg === '--skip-workflows') {
       options.skipWorkflows = true;
+    } else if (arg === '--skip-quality-standard') {
+      options.skipQualityStandard = true;
     } else if (arg === '--sync-workflows') {
       options.syncWorkflows = true;
     } else if (arg === '--sync-husky') {
@@ -123,14 +126,15 @@ ${colors.yellow}USAGE:${colors.reset}
   npx kabran-setup [options]
 
 ${colors.yellow}OPTIONS:${colors.reset}
-  --type=<type>      Project type: node, react, base (default: node)
-  --skip-husky       Don't copy husky hooks
-  --skip-workflows   Don't copy GitHub workflow files
-  --sync-workflows   Overwrite existing workflow files
-  --sync-husky       Overwrite existing husky hooks
-  --force            Overwrite all existing files
-  --dry-run          Preview changes without modifying files
-  --help, -h         Show this help message
+  --type=<type>           Project type: node, react, base (default: node)
+  --skip-husky            Don't copy husky hooks
+  --skip-workflows        Don't copy GitHub workflow files
+  --skip-quality-standard Don't create quality-standard.md
+  --sync-workflows        Overwrite existing workflow files
+  --sync-husky            Overwrite existing husky hooks
+  --force                 Overwrite all existing files
+  --dry-run               Preview changes without modifying files
+  --help, -h              Show this help message
 
 ${colors.yellow}EXAMPLES:${colors.reset}
   # Setup Node.js project (default)
@@ -439,6 +443,111 @@ export function setupConfigs(projectDir, templatesDir, options) {
 }
 
 /**
+ * Get current date in YYYY-MM-DD format
+ * @returns {string} Formatted date
+ */
+export function getCurrentDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get kabran-config version from package.json
+ * @returns {string} Package version
+ */
+export function getPackageVersion() {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const packageJsonPath = join(__dirname, '..', '..', 'package.json');
+
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    return packageJson.version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
+/**
+ * Setup quality-standard.md
+ * @param {string} projectDir - Project directory
+ * @param {string} templatesDir - Templates directory
+ * @param {object} options - Setup options
+ * @returns {object} Results
+ */
+export function setupQualityStandard(projectDir, templatesDir, options) {
+  const {force = false, dryRun = false, type = 'node'} = options;
+
+  const results = {
+    created: 0,
+    overwritten: 0,
+    skipped: 0,
+  };
+
+  logInfo('Setting up quality-standard.md...');
+
+  const src = join(templatesDir, 'docs', 'quality', '001-quality-standard.md');
+  const dest = join(projectDir, 'docs', 'quality', '001-quality-standard.md');
+
+  // Check if source template exists
+  if (!existsSync(src)) {
+    logWarn('Template not found: templates/docs/quality/001-quality-standard.md');
+    return results;
+  }
+
+  // Check if destination exists
+  const destExists = existsSync(dest);
+
+  if (destExists && !force) {
+    if (dryRun) {
+      logDry(`Would skip (exists): ${dest}`);
+    } else {
+      logSkip(`docs/quality/001-quality-standard.md (already exists)`);
+    }
+    results.skipped = 1;
+    return results;
+  }
+
+  if (dryRun) {
+    if (destExists) {
+      logDry(`Would overwrite: docs/quality/001-quality-standard.md`);
+      results.overwritten = 1;
+    } else {
+      logDry(`Would create: docs/quality/001-quality-standard.md`);
+      results.created = 1;
+    }
+    return results;
+  }
+
+  // Read template and replace placeholders
+  let content = readFileSync(src, 'utf-8');
+  const currentDate = getCurrentDate();
+  const version = getPackageVersion();
+
+  // Replace placeholders
+  content = content.replace(/YYYY-MM-DD/g, currentDate);
+  content = content.replace(/X\.Y\.Z/g, version);
+  content = content.replace(/node \/ react \/ base/g, type);
+
+  // Ensure directory exists and write file
+  ensureDir(dirname(dest), dryRun);
+  writeFileSync(dest, content, 'utf-8');
+
+  if (destExists) {
+    logSuccess(`Overwritten: docs/quality/001-quality-standard.md`);
+    results.overwritten = 1;
+  } else {
+    logSuccess(`Created: docs/quality/001-quality-standard.md`);
+    results.created = 1;
+  }
+
+  return results;
+}
+
+/**
  * Run setup
  * @param {string} projectDir - Project directory
  * @param {object} options - Setup options
@@ -451,6 +560,7 @@ export function runSetup(projectDir, options) {
     workflows: {created: 0, overwritten: 0, skipped: 0},
     husky: {created: 0, overwritten: 0, skipped: 0},
     configs: {created: 0, overwritten: 0, skipped: 0},
+    qualityStandard: {created: 0, overwritten: 0, skipped: 0},
   };
 
   console.log('');
@@ -481,6 +591,12 @@ export function runSetup(projectDir, options) {
     console.log('');
   }
 
+  // Setup quality-standard.md (unless skipped or in sync mode)
+  if (!options.skipQualityStandard && !isSyncMode) {
+    summary.qualityStandard = setupQualityStandard(projectDir, templatesDir, options);
+    console.log('');
+  }
+
   return summary;
 }
 
@@ -493,10 +609,10 @@ export function printSummary(summary) {
   console.log(`${colors.cyan}=== Setup Summary ===${colors.reset}`);
 
   const total = {
-    created: summary.workflows.created + summary.husky.created + summary.configs.created,
+    created: summary.workflows.created + summary.husky.created + summary.configs.created + summary.qualityStandard.created,
     overwritten:
-      summary.workflows.overwritten + summary.husky.overwritten + summary.configs.overwritten,
-    skipped: summary.workflows.skipped + summary.husky.skipped + summary.configs.skipped,
+      summary.workflows.overwritten + summary.husky.overwritten + summary.configs.overwritten + summary.qualityStandard.overwritten,
+    skipped: summary.workflows.skipped + summary.husky.skipped + summary.configs.skipped + summary.qualityStandard.skipped,
   };
 
   if (total.created > 0) {
