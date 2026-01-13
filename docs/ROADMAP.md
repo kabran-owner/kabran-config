@@ -4,7 +4,7 @@ id: 01KEW1S1DY2Y6247E4B4D62PR8
 type: standard
 status: active
 tags: [guidelines, standard]
-version: 0.2.3
+version: 0.2.7
 created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
@@ -16,12 +16,12 @@ updated_at: 2026-01-13
 ## Overview
 
 ```
-PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →  PROP-005 (v1.7.0+)
+PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →  PROP-005 (v1.6.0+)
 ┌─────────────┐       ┌─────────────┐       ┌─────────────────────┐         ┌─────────────────┐
 │  Setup CLI  │  →    │  Quality    │  →    │  CI Observability   │    →    │   Telemetry     │
 │  Templates  │       │  Standard   │       │  Unified Schema     │         │   Package       │
 └─────────────┘       └─────────────┘       └─────────────────────┘         └─────────────────┘
-     ✅                    ✅                        ✅                           Draft
+     ✅                    ✅                        ✅                          🟡 75%
 ```
 
 ---
@@ -101,47 +101,48 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 
 ---
 
-## Phase 4: PROP-005 - Telemetry Package
+## Phase 4: PROP-005 - Telemetry Package 🟡
 
 **Target:** v1.7.0 → v1.9.0
-**Status:** Draft
+**Status:** Partially Implemented (v1.6.0)
 **Depende de:** PROP-003, PROP-004
 **Proposta:** [PROP-005-observability-reference-implementation.md](./proposals/PROP-005-observability-reference-implementation.md)
 **Claude Code Plan:** `~/.claude/plans/prop-005-telemetry-package.md`
 
 > Empacotar infraestrutura OpenTelemetry no kabran-config, conectando CI metrics com runtime traces.
 
-### 4.1 Core & Config (v1.7.0)
+### 4.1 Core & Config (v1.7.0) ✅
 
-- [ ] Estrutura `src/telemetry/`
-- [ ] Config schema e defaults
-- [ ] Shared utilities (context, attributes)
-- [ ] TypeScript types
-- [ ] Testes para config
+- [x] Estrutura `src/telemetry/`
+- [x] Config schema e defaults
+- [x] Shared utilities (context, attributes)
+- [x] TypeScript types
+- [x] Testes para config
 
-### 4.2 Frontend Module (v1.7.0)
+### 4.2 Frontend Module (v1.7.0) 🟡
 
-- [ ] Extrair telemetria frontend do CIE
-- [ ] Modulo configuravel
-- [ ] Opcoes de instrumentacao
+- [x] Extrair telemetria frontend do CIE
+- [x] Modulo configuravel
+- [x] Opcoes de instrumentacao
 - [ ] Testes com OTel mockado
-- [ ] Documentacao
+- [ ] Documentacao no README
 
-### 4.3 Edge Module (v1.8.0)
+### 4.3 Edge Module (v1.8.0) 🟡
 
-- [ ] Extrair telemetria edge do CIE
-- [ ] `withTelemetry` wrapper
-- [ ] `traceSupabaseQuery` helper
-- [ ] Compatibilidade Deno
-- [ ] Documentacao
+- [x] Extrair telemetria edge do CIE
+- [x] `withTelemetry` wrapper
+- [x] `traceSupabaseQuery` helper
+- [x] Compatibilidade Deno
+- [ ] Testes unitarios
+- [ ] Documentacao no README
 
-### 4.4 Node Module (v1.8.0)
+### 4.4 Node Module (v1.8.0) 🟡
 
-- [ ] Node.js provider
-- [ ] Express/Fastify middleware
-- [ ] Batch processor config
-- [ ] Testes
-- [ ] Documentacao
+- [x] Node.js provider
+- [x] Express/Fastify middleware
+- [x] Batch processor config
+- [ ] Testes unitarios
+- [ ] Documentacao no README
 
 ### 4.5 CI Integration (v1.9.0)
 
@@ -150,12 +151,12 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 - [ ] CI step instrumentation
 - [ ] E2E testing com OTel collector
 
-### 4.6 Logger Module (v1.9.0)
+### 4.6 Logger Module (v1.9.0) ✅
 
-- [ ] Logger com trace correlation
-- [ ] Multiple output formats
-- [ ] Log level configuration
-- [ ] Integration tests
+- [x] Logger com trace correlation
+- [x] Multiple output formats
+- [x] Log level configuration
+- [x] Integration tests
 
 ---
 
@@ -167,13 +168,13 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 | 2 | PROP-002 | v1.3.0 | ✅ Completed |
 | 3.1 | PROP-003/004 Schema | v1.4.0 | ✅ Completed |
 | 3.2 | PROP-003/004 Validators | v1.5.0 | ✅ Completed |
-| 3.3 | PROP-003/004 CI Integration | v1.6.0 | ✅ PR #7 |
-| 4.1 | PROP-005 Core & Config | v1.7.0 | Not Started |
-| 4.2 | PROP-005 Frontend | v1.7.0 | Not Started |
-| 4.3 | PROP-005 Edge | v1.8.0 | Not Started |
-| 4.4 | PROP-005 Node | v1.8.0 | Not Started |
+| 3.3 | PROP-003/004 CI Integration | v1.6.0 | ✅ Completed |
+| 4.1 | PROP-005 Core & Config | v1.7.0 | ✅ Completed |
+| 4.2 | PROP-005 Frontend | v1.7.0 | 🟡 Partial (needs tests/docs) |
+| 4.3 | PROP-005 Edge | v1.8.0 | 🟡 Partial (needs tests/docs) |
+| 4.4 | PROP-005 Node | v1.8.0 | 🟡 Partial (needs tests/docs) |
 | 4.5 | PROP-005 CI Integration | v1.9.0 | Not Started |
-| 4.6 | PROP-005 Logger | v1.9.0 | Not Started |
+| 4.6 | PROP-005 Logger | v1.9.0 | ✅ Completed |
 
 ---
 
@@ -185,10 +186,8 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 | v1.3.0 | Quality Standard Validator | Released |
 | v1.4.0 | CI Result Schema v2 | Released |
 | v1.5.0 | Validators JSON Output | Released |
-| v1.6.0 | Scope Filtering, PR Comments | PR #7 |
-| v1.7.0 | Telemetry Core + Frontend | Planned |
-| v1.8.0 | Telemetry Edge + Node | Planned |
-| v1.9.0 | Telemetry CI Integration + Logger | Planned |
+| v1.6.0 | Scope Filtering, PR Comments, Telemetry (partial) | Released |
+| v1.7.0 | Telemetry Tests + Docs + CI Integration | Planned |
 
 ---
 
@@ -199,3 +198,90 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 - Releases seguem semver: breaking = major, feature = minor, fix = patch
 - PROP-003 foi superseded por PROP-004 (schema unificado)
 - PROP-005 conecta CI observability com runtime telemetry
+
+---
+
+## Gaps Analysis (2026-01-13)
+
+> Revisao geral identificou gaps entre as propostas e a implementacao atual.
+
+### Resumo por Proposta
+
+| Proposta | Completude | Status |
+|----------|------------|--------|
+| PROP-001 | 100% | ✅ Sem gaps |
+| PROP-002 | 100% | ✅ Sem gaps |
+| PROP-003 | ~70% | 🟡 Gaps em historico/trends |
+| PROP-004 | ~90% | ✅ Gaps menores |
+| PROP-005 | ~75% | 🟡 Gaps em testes/docs/CI integration |
+
+### PROP-003: Quality Status Automation
+
+**Gaps identificados:**
+
+| Gap | Prioridade | Descricao |
+|-----|------------|-----------|
+| Historico de runs | Alta | `history[]` com max 30 entries nao implementado |
+| Trends calculation | Alta | `direction`, `change_7d`, `change_30d` nao implementados |
+| Issues tracking | Media | `first_seen`, `run_count` per-issue nao implementados |
+| Markdown generator | Baixa | `generate-quality-markdown.mjs` nao criado |
+
+**Decisao necessaria:** Onde persistir historico? Arquivo local vs CI artifacts.
+
+### PROP-004: CI Observability Metrics
+
+**Gaps menores:**
+
+| Gap | Prioridade | Descricao |
+|-----|------------|-----------|
+| `aggregate_coverage()` | Media | Funcao bash nao implementada (Node.js faz) |
+| `count_lint_issues()` | Baixa | Parsing inline de warnings nao implementado |
+| `--list-scopes` | Baixa | Flag de CLI nao implementada |
+| `coverage.delta_from_baseline` | Baixa | Comparacao com baseline ausente |
+
+### PROP-005: Telemetry Package
+
+**Gaps identificados:**
+
+| Gap | Prioridade | Descricao |
+|-----|------------|-----------|
+| README docs | Alta | Telemetria nao documentada - usuarios nao sabem que existe |
+| CI Integration | Alta | `trace_id` nao inserido em ci-result.json |
+| PR trace links | Alta | `pr-quality-comment.mjs` nao gera links para traces |
+| Frontend tests | Media | `telemetry-frontend.test.mjs` nao existe |
+| Edge tests | Media | `telemetry-edge.test.mjs` nao existe |
+| Node tests | Media | `telemetry-node.test.mjs` nao existe |
+| Migration guide | Media | Secao "From CIE-style to Package" nao existe |
+
+### Acoes Recomendadas
+
+#### Prioridade Alta (v1.7.0)
+
+1. **Documentar telemetria no README**
+   - Usuarios nao sabem que o pacote oferece OTel integration
+   - Adicionar secao completa com exemplos
+
+2. **Implementar trace_id no ci-result.json**
+   - Conectar CI com observability conforme PROP-005 Phase 5
+   - Permitir correlacao de builds com traces
+
+#### Prioridade Media (v1.7.0+)
+
+1. **Adicionar testes para telemetry modules**
+   - `telemetry-frontend.test.mjs`
+   - `telemetry-edge.test.mjs`
+   - `telemetry-node.test.mjs`
+
+2. **Implementar historico/trends (PROP-003)**
+   - Requer decisao sobre persistencia
+   - Considerar: arquivo `.status-history.json` ou apenas CI artifacts
+
+3. **PR comments com trace links**
+   - Valor significativo para debugging em producao
+
+#### Prioridade Baixa (backlog)
+
+1. `--list-scopes` no ci-runner
+2. `generate-quality-markdown.mjs`
+3. `aggregate_coverage()` em bash vs Node.js
+4. Migration guide para telemetria

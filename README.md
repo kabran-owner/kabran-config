@@ -888,6 +888,283 @@ For detailed migration instructions from existing CI/CD scripts, see [CI-CD-MIGR
 
 ---
 
+## Telemetry (OpenTelemetry)
+
+Unified observability for Kabran projects. Distributed tracing, error tracking, and performance monitoring using OpenTelemetry.
+
+> **Optional Feature:** Telemetry dependencies are optional. Only install them if your project needs observability.
+
+### Quick Start
+
+```javascript
+// Frontend (React/Vite)
+import { initTelemetry, createSpan } from '@kabran-tecnologia/kabran-config/telemetry/frontend'
+
+initTelemetry({ serviceName: 'my-app' })
+
+// Edge Functions (Supabase/Deno)
+import { withTelemetry, traceSupabaseQuery } from '@kabran-tecnologia/kabran-config/telemetry/edge'
+
+serve(withTelemetry('my-function', async (req, span) => {
+  const result = await traceSupabaseQuery('select', 'users', () => supabase.from('users').select())
+  return new Response(JSON.stringify(result.data))
+}))
+
+// Node.js Backend
+import { initTelemetry, telemetryMiddleware } from '@kabran-tecnologia/kabran-config/telemetry/node'
+
+await initTelemetry({ serviceName: 'my-api' })
+app.use(telemetryMiddleware())
+```
+
+### Installation
+
+Install the required peer dependencies only if using telemetry:
+
+```bash
+npm install --save-dev \
+  @opentelemetry/api@^1.9 \
+  @opentelemetry/sdk-trace-base@^1.28 \
+  @opentelemetry/exporter-trace-otlp-http@^0.56 \
+  @opentelemetry/resources@^1.28 \
+  @opentelemetry/semantic-conventions@^1.28 \
+  @opentelemetry/core@^1.28
+
+# Frontend additional
+npm install --save-dev \
+  @opentelemetry/sdk-trace-web@^1.28 \
+  @opentelemetry/instrumentation@^0.56 \
+  @opentelemetry/instrumentation-fetch@^0.56 \
+  @opentelemetry/instrumentation-document-load@^0.43 \
+  @opentelemetry/instrumentation-user-interaction@^0.43
+
+# Node.js additional
+npm install --save-dev @opentelemetry/sdk-trace-node@^1.28
+```
+
+### Frontend Module
+
+For browser/frontend applications (React, Vue, etc.):
+
+```javascript
+// main.tsx or App.tsx
+import { initTelemetry, createSpan, createAsyncSpan } from '@kabran-tecnologia/kabran-config/telemetry/frontend'
+
+// Initialize at app startup
+initTelemetry({
+  serviceName: 'my-frontend',
+  serviceVersion: '1.0.0',
+  endpoint: 'https://otel.example.com',
+})
+
+// Create custom spans for tracking operations
+function handleCheckout(items) {
+  return createSpan('checkout.process', (span) => {
+    span.setAttribute('items.count', items.length)
+    return processCheckout(items)
+  })
+}
+
+// Async operations
+async function fetchUserData(userId) {
+  return createAsyncSpan('user.fetch', async (span) => {
+    span.setAttribute('user.id', userId)
+    const response = await fetch(`/api/users/${userId}`)
+    return response.json()
+  })
+}
+```
+
+**Auto-instrumentation included:**
+
+- Fetch API requests
+- Document load performance
+- User interactions (click, submit)
+- Global error handlers
+
+### Edge Module (Supabase/Deno)
+
+For serverless/edge functions with immediate trace export:
+
+```javascript
+import { serve } from 'https://deno.land/std/http/server.ts'
+import { withTelemetry, traceSupabaseQuery, getTraceId } from '@kabran-tecnologia/kabran-config/telemetry/edge'
+
+serve(withTelemetry('user-api', async (req, span) => {
+  // Automatic HTTP attributes (method, url, status)
+  span.setAttribute('custom.attribute', 'value')
+
+  // Trace database queries
+  const { data, error } = await traceSupabaseQuery('select', 'users', () =>
+    supabase.from('users').select('*').limit(10)
+  )
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+  }
+
+  return new Response(JSON.stringify({ data, trace_id: getTraceId() }))
+}))
+```
+
+**Features:**
+
+- W3C Trace Context propagation
+- SimpleSpanProcessor for immediate export (serverless-friendly)
+- Supabase query wrapper with automatic attributes
+- Error response includes trace_id for debugging
+
+### Node.js Module
+
+For Node.js backends with Express/Fastify:
+
+```javascript
+import express from 'express'
+import { initTelemetry, telemetryMiddleware, createSpan } from '@kabran-tecnologia/kabran-config/telemetry/node'
+
+const app = express()
+
+// Initialize before routes
+await initTelemetry({
+  serviceName: 'my-api',
+  serviceVersion: '1.0.0',
+})
+
+// Add middleware (creates spans for all requests)
+app.use(telemetryMiddleware({
+  ignorePaths: ['/health', '/ready', '/metrics'],
+}))
+
+// Access span in handlers via req.span
+app.get('/users/:id', async (req, res) => {
+  req.span.setAttribute('user.id', req.params.id)
+  const user = await getUserById(req.params.id)
+  res.json(user)
+})
+
+// Graceful shutdown on SIGTERM/SIGINT
+```
+
+**Features:**
+
+- BatchSpanProcessor for efficient export
+- Express/Fastify middleware
+- Automatic request/response tracing
+- Parent context extraction from headers
+- Process signal handlers for graceful shutdown
+
+### Logger Module
+
+Structured logging with trace correlation:
+
+```javascript
+import { createLogger, createSpanLogger } from '@kabran-tecnologia/kabran-config/telemetry/logger'
+
+// Basic logger
+const logger = createLogger({
+  name: 'my-service',
+  level: 'info',
+  format: 'json', // or 'pretty'
+})
+
+logger.info('User logged in', { userId: '123' })
+
+// Span-aware logger (adds events to active span)
+const spanLogger = createSpanLogger(span)
+spanLogger.info('Processing started')
+spanLogger.error('Processing failed', { error: err.message })
+```
+
+### Configuration
+
+Configuration is resolved from multiple sources (in order of precedence):
+
+1. Explicit config object
+2. Environment variables (Vite-style: `VITE_*`)
+3. Environment variables (Node-style: `OTEL_*`)
+4. Smart defaults
+
+**Environment Variables:**
+
+| Variable | Vite Equivalent | Description | Default |
+|----------|-----------------|-------------|---------|
+| `OTEL_ENDPOINT` | `VITE_OTEL_ENDPOINT` | Collector endpoint URL | - |
+| `OTEL_ENABLED` | `VITE_OTEL_ENABLED` | Enable/disable telemetry | `true` in prod |
+| `SERVICE_NAME` | `VITE_SERVICE_NAME` | Service identifier | Required |
+| `SERVICE_VERSION` | `VITE_SERVICE_VERSION` | Service version | `1.0.0` |
+| `ENVIRONMENT` | `VITE_ENVIRONMENT` | Deployment environment | `development` |
+| `OTEL_SAMPLE_RATE` | `VITE_OTEL_SAMPLE_RATE` | Sampling rate (0.0-1.0) | `0.1` (10%) |
+
+**Programmatic Configuration:**
+
+```javascript
+import { defineTelemetryConfig } from '@kabran-tecnologia/kabran-config/telemetry/config'
+
+const config = defineTelemetryConfig({
+  serviceName: 'my-service',
+  serviceVersion: '1.0.0',
+  endpoint: 'https://otel.example.com',
+  environment: 'production',
+  sampleRate: 0.5, // 50% sampling
+  instrumentation: {
+    fetch: true,
+    documentLoad: true,
+    userInteraction: false,
+  },
+  resourceAttributes: {
+    'deployment.region': 'us-east-1',
+  },
+})
+```
+
+### API Reference
+
+**Frontend (`telemetry/frontend`):**
+
+- `initTelemetry(config)` - Initialize OpenTelemetry
+- `getTracer(name?)` - Get tracer instance
+- `getCurrentSpan()` - Get active span
+- `getTraceId()` - Get current trace ID
+- `createSpan(name, fn, attrs?)` - Create sync span
+- `createAsyncSpan(name, fn, attrs?)` - Create async span
+- `addSpanEvent(name, attrs?)` - Add event to current span
+- `setSpanAttributes(attrs)` - Set attributes on current span
+- `shutdownTelemetry()` - Graceful shutdown
+- `isInitialized()` - Check if initialized
+- `getConfig()` - Get resolved config
+
+**Edge (`telemetry/edge`):**
+
+- `withTelemetry(name, handler, config?)` - Wrap request handler
+- `traceSupabaseQuery(op, table, fn)` - Wrap Supabase query
+- `extractContext(headers)` - Extract W3C trace context
+- `injectContext(headers)` - Inject W3C trace context
+- `getTracer(name?)`, `getCurrentSpan()`, `getTraceId()`
+- `createSpan()`, `createAsyncSpan()`, `addSpanEvent()`, `setSpanAttributes()`
+- `shutdownTelemetry()`
+
+**Node (`telemetry/node`):**
+
+- `initTelemetry(config)` - Initialize OpenTelemetry
+- `telemetryMiddleware(options?)` - Express/Fastify middleware
+- `getTracer(name?)`, `getCurrentSpan()`, `getTraceId()`
+- `createSpan()`, `createAsyncSpan()`, `addSpanEvent()`, `setSpanAttributes()`
+- `shutdownTelemetry()`, `isInitialized()`, `getConfig()`
+
+**Logger (`telemetry/logger`):**
+
+- `createLogger(options)` - Create structured logger
+- `createSpanLogger(span)` - Create span-aware logger
+
+**Config (`telemetry/config`):**
+
+- `defineTelemetryConfig(config)` - Define configuration
+- `resolveConfig(config, env, mode)` - Resolve from sources
+- `validateConfig(config)` - Validate configuration
+- `detectEnabled(mode, env)` - Auto-detect if enabled
+
+---
+
 ## What's Included
 
 | Config | Description |
@@ -909,6 +1186,12 @@ For detailed migration instructions from existing CI/CD scripts, see [CI-CD-MIGR
 | `@kabran-tecnologia/kabran-config/scripts/ci/*` | Standardized CI pipeline runner and core functions |
 | `@kabran-tecnologia/kabran-config/scripts/deploy/*` | Standardized deployment orchestration |
 | `@kabran-tecnologia/kabran-config/scripts/setup` | Project setup CLI (`npx kabran-setup`) |
+| `@kabran-tecnologia/kabran-config/telemetry/config` | Telemetry configuration and validation |
+| `@kabran-tecnologia/kabran-config/telemetry/frontend` | OpenTelemetry for browser/frontend apps |
+| `@kabran-tecnologia/kabran-config/telemetry/edge` | OpenTelemetry for Supabase/Deno edge functions |
+| `@kabran-tecnologia/kabran-config/telemetry/node` | OpenTelemetry for Node.js backends |
+| `@kabran-tecnologia/kabran-config/telemetry/logger` | Structured logging with trace correlation |
+| `@kabran-tecnologia/kabran-config/telemetry/shared` | Shared telemetry utilities and types |
 
 ---
 
