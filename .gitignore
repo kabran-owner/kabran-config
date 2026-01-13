@@ -22,5 +22,7 @@ npm-debug.log*
 # Test artifacts
 test-results/
 coverage/
+tests/fixtures/*/tmp/
+tests/fixtures/*/docs/
 
 .workspace/
