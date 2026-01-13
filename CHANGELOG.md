@@ -1,3 +1,14 @@
+## [1.4.0](https://github.com/kabran-owner/kabran-config/compare/v1.3.0...v1.4.0) (2026-01-13)
+
+### Features
+
+* **ci:** add unified ci-result.json v2 schema with timing and quality metrics ([45034f6](https://github.com/kabran-owner/kabran-config/commit/45034f6fa95ab9b14ab4bed8d64101b09ad28ecb))
+
+### Documentation
+
+* fix CHANGELOG.md formatting after semantic-release ([c51209a](https://github.com/kabran-owner/kabran-config/commit/c51209a9179fffdb13fa13ca91de86d648cf3a9f))
+* remove frontmatter from CHANGELOG.md ([af0b668](https://github.com/kabran-owner/kabran-config/commit/af0b6683f9099f14cc8e1766733fbffc83c087b8))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
