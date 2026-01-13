@@ -1,0 +1,111 @@
+# Kabran CI Quality Workflow
+#
+# This workflow runs the Kabran CI pipeline and posts quality reports to PRs.
+#
+# Usage:
+#   Copy this file to your project's .github/workflows/ directory.
+#   Customize the ci-config.sh to define your project's CI steps.
+#
+# Requirements:
+#   - scripts/ci-config.sh with PROJECT_NAME, PM, and ci_steps() defined
+#   - @kabran-tecnologia/kabran-config installed as dev dependency
+
+name: CI Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write  # Required for PR comments
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for baseline comparison
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run CI Pipeline
+        id: ci
+        env:
+          CI_USE_V2: 'true'
+          CI_OUTPUT_FILE_V2: 'docs/quality/ci-result.json'
+          # CI_SCOPE: 'all'  # Uncomment and set to filter by component
+        run: |
+          # Run CI using kabran-config runner
+          npx kabran-ci || exit_code=$?
+
+          # Ensure ci-result.json exists
+          if [ -f "docs/quality/ci-result.json" ]; then
+            echo "ci_result_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "ci_result_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+          exit ${exit_code:-0}
+
+      - name: Generate PR Comment
+        if: github.event_name == 'pull_request' && steps.ci.outputs.ci_result_exists == 'true'
+        id: comment
+        run: |
+          # Generate quality comparison comment
+          npx kabran-pr-comment \
+            --current docs/quality/ci-result.json \
+            --baseline-branch ${{ github.base_ref }} \
+            --output /tmp/pr-comment.md || true
+
+          if [ -f "/tmp/pr-comment.md" ]; then
+            echo "comment_exists=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post PR Comment
+        if: github.event_name == 'pull_request' && steps.comment.outputs.comment_exists == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: kabran-quality
+          path: /tmp/pr-comment.md
+
+      - name: Upload CI Result
+        if: always() && steps.ci.outputs.ci_result_exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-result
+          path: docs/quality/ci-result.json
+          retention-days: 30
+
+      - name: Commit CI Result (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.ci.outputs.ci_result_exists == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Only commit if there are changes
+          if git diff --quiet docs/quality/ci-result.json; then
+            echo "No changes to ci-result.json"
+          else
+            git add docs/quality/ci-result.json
+            git commit -m "chore(ci): update ci-result.json [skip ci]"
+            git push
+          fi

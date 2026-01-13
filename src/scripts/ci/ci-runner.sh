@@ -27,6 +27,7 @@ OUTPUT_FILE_V2="${CI_OUTPUT_FILE_V2:-docs/quality/ci-result.json}"
 VERBOSE="${CI_VERBOSE:-false}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 USE_V2="${CI_USE_V2:-true}"
+CI_SCOPE="${CI_SCOPE:-all}"  # Scope filter: "all" or component name (e.g., "app", "website")
 
 # Track errors (reinitialize to avoid issues with sourced scripts)
 ERRORS=()
@@ -80,6 +81,9 @@ fi
 log_info "Starting Kabran CI - $PROJECT_NAME"
 log_info "Working directory: $PROJECT_ROOT"
 log_info "CI Core Version: $CI_CORE_VERSION"
+if [ "$CI_SCOPE" != "all" ]; then
+  log_info "Scope: $CI_SCOPE (filtered)"
+fi
 echo ""
 
 # Start timing

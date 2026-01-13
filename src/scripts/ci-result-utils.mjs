@@ -306,6 +306,125 @@ export function extractComponents(steps) {
 }
 
 /**
+ * Aggregate coverage data from multiple test steps
+ *
+ * @param {Array} steps - Array of step results with coverage data
+ * @returns {Object|null} Aggregated coverage or null if no coverage data
+ */
+export function aggregateCoverage(steps) {
+  const coverageData = []
+
+  for (const step of steps) {
+    if (step.output?.coverage) {
+      coverageData.push({
+        component: step.component || 'default',
+        coverage: step.output.coverage,
+        tests: {
+          passed: step.output.passed || 0,
+          failed: step.output.failed || 0,
+          skipped: step.output.skipped || 0,
+        },
+      })
+    }
+  }
+
+  if (coverageData.length === 0) {
+    return null
+  }
+
+  // Calculate weighted average based on test count
+  let totalTests = 0
+  let weightedLines = 0
+  let weightedBranches = 0
+  let weightedFunctions = 0
+  let weightedStatements = 0
+
+  const byComponent = {}
+
+  for (const data of coverageData) {
+    const testCount = data.tests.passed + data.tests.failed
+    totalTests += testCount
+
+    const cov = data.coverage
+    if (cov.lines !== undefined) weightedLines += cov.lines * testCount
+    if (cov.branches !== undefined) weightedBranches += cov.branches * testCount
+    if (cov.functions !== undefined) weightedFunctions += cov.functions * testCount
+    if (cov.statements !== undefined) weightedStatements += cov.statements * testCount
+
+    byComponent[data.component] = {
+      ...data.coverage,
+      tests: data.tests,
+    }
+  }
+
+  // Calculate averages
+  const avgLines = totalTests > 0 ? Math.round((weightedLines / totalTests) * 10) / 10 : 0
+  const avgBranches = totalTests > 0 ? Math.round((weightedBranches / totalTests) * 10) / 10 : 0
+  const avgFunctions = totalTests > 0 ? Math.round((weightedFunctions / totalTests) * 10) / 10 : 0
+  const avgStatements = totalTests > 0 ? Math.round((weightedStatements / totalTests) * 10) / 10 : 0
+
+  return {
+    lines: avgLines,
+    branches: avgBranches,
+    functions: avgFunctions,
+    statements: avgStatements,
+    by_component: byComponent,
+  }
+}
+
+/**
+ * Compare two CI results and calculate diff
+ *
+ * @param {Object} current - Current CI result
+ * @param {Object} baseline - Baseline CI result (e.g., from main branch)
+ * @returns {Object} Comparison result with diffs
+ */
+export function compareCiResults(current, baseline) {
+  const scoreDiff = current.summary.score - baseline.summary.score
+  const issuesDiff = current.summary.total_issues - baseline.summary.total_issues
+  const blockingDiff = current.summary.blocking - baseline.summary.blocking
+
+  // Determine trend
+  let trend = 'stable'
+  if (scoreDiff > 5) trend = 'improving'
+  else if (scoreDiff < -5) trend = 'degrading'
+
+  // Compare coverage if available
+  let coverageDiff = null
+  if (current.checks?.test?.coverage && baseline.checks?.test?.coverage) {
+    coverageDiff = {
+      lines: (current.checks.test.coverage.lines || 0) - (baseline.checks.test.coverage.lines || 0),
+      branches: (current.checks.test.coverage.branches || 0) - (baseline.checks.test.coverage.branches || 0),
+      functions: (current.checks.test.coverage.functions || 0) - (baseline.checks.test.coverage.functions || 0),
+    }
+  }
+
+  return {
+    trend,
+    score: {
+      current: current.summary.score,
+      baseline: baseline.summary.score,
+      diff: scoreDiff,
+    },
+    issues: {
+      current: current.summary.total_issues,
+      baseline: baseline.summary.total_issues,
+      diff: issuesDiff,
+    },
+    blocking: {
+      current: current.summary.blocking,
+      baseline: baseline.summary.blocking,
+      diff: blockingDiff,
+    },
+    coverage: coverageDiff,
+    status: {
+      current: current.summary.status,
+      baseline: baseline.summary.status,
+    },
+  }
+}
+
+/**
  * Create a minimal valid CI result object
  *
  * @param {Object} options - Options
