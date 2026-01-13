@@ -36,6 +36,12 @@ import {
   extractComponents,
 } from './ci-result-utils.mjs'
 
+// Validator imports
+import { getLicenseCheckResult } from './license-check.mjs'
+import { getReadmeCheckResult } from './readme-validator.mjs'
+import { getEnvCheckResult } from './env-validator.mjs'
+import { getQualityStandardCheckResult } from './quality-standard-validator.mjs'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
@@ -68,6 +74,55 @@ function getProjectInfo(projectRoot) {
 }
 
 /**
+ * Run all validators and return check results
+ *
+ * @param {string} projectRoot - Project root directory
+ * @param {Object} [options] - Options
+ * @param {boolean} [options.skipLicense] - Skip license check
+ * @param {boolean} [options.skipReadme] - Skip README check
+ * @param {boolean} [options.skipEnv] - Skip env check
+ * @param {boolean} [options.skipQualityStandard] - Skip quality standard check
+ * @returns {Promise<Object>} Validator results for checks object
+ */
+async function runValidators(projectRoot, options = {}) {
+  const results = {}
+
+  if (!options.skipLicense) {
+    try {
+      results.license = await getLicenseCheckResult(projectRoot)
+    } catch (err) {
+      results.license = { status: 'fail', error: err.message }
+    }
+  }
+
+  if (!options.skipReadme) {
+    try {
+      results.readme = getReadmeCheckResult(projectRoot)
+    } catch (err) {
+      results.readme = { status: 'fail', error: err.message }
+    }
+  }
+
+  if (!options.skipEnv) {
+    try {
+      results.env = await getEnvCheckResult(projectRoot)
+    } catch (err) {
+      results.env = { status: 'fail', error: err.message }
+    }
+  }
+
+  if (!options.skipQualityStandard) {
+    try {
+      results.quality_standard = getQualityStandardCheckResult(projectRoot)
+    } catch (err) {
+      results.quality_standard = { status: 'fail', error: err.message }
+    }
+  }
+
+  return results
+}
+
+/**
  * Generate CI result from input data
  *
  * @param {Object} input - Input data
@@ -76,6 +131,7 @@ function getProjectInfo(projectRoot) {
  * @param {Object} input.timing - Timing information
  * @param {Object} input.project - Project information
  * @param {Object} input.metadata - Additional metadata
+ * @param {Object} input.validators - Validator results (from runValidators)
  * @returns {Object} CI result object
  */
 export function generateCiResult(input) {
@@ -86,6 +142,7 @@ export function generateCiResult(input) {
     project = {},
     metadata = {},
     issues = [],
+    validators = {},
   } = input
 
   const now = new Date().toISOString()
@@ -94,7 +151,13 @@ export function generateCiResult(input) {
   const totalMs = timing.total_ms || 0
 
   // Calculate aggregations
-  const checks = aggregateByCategory(steps)
+  const stepChecks = aggregateByCategory(steps)
+
+  // Merge step-based checks with validator results
+  const checks = {
+    ...stepChecks,
+    ...validators,
+  }
   const executionStats = calculateExecutionStats(steps)
   const issueCounts = countIssues(issues)
   const components = extractComponents(steps)
@@ -168,6 +231,11 @@ function parseArgs(args) {
     output: null,
     projectRoot: process.cwd(),
     stdout: false,
+    runValidators: false,
+    skipLicense: false,
+    skipReadme: false,
+    skipEnv: false,
+    skipQualityStandard: false,
   }
 
   for (let i = 0; i < args.length; i++) {
@@ -181,16 +249,31 @@ function parseArgs(args) {
       options.projectRoot = args[++i]
     } else if (arg === '--stdout') {
       options.stdout = true
+    } else if (arg === '--run-validators') {
+      options.runValidators = true
+    } else if (arg === '--skip-license') {
+      options.skipLicense = true
+    } else if (arg === '--skip-readme') {
+      options.skipReadme = true
+    } else if (arg === '--skip-env') {
+      options.skipEnv = true
+    } else if (arg === '--skip-quality-standard') {
+      options.skipQualityStandard = true
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
 Usage: generate-ci-result.mjs [options]
 
 Options:
-  -i, --input <file>      Input JSON file with step data
-  -o, --output <file>     Output file path (default: docs/quality/ci-result.json)
-  -p, --project-root <dir> Project root directory (default: cwd)
-  --stdout                Print result to stdout instead of file
-  -h, --help              Show this help message
+  -i, --input <file>        Input JSON file with step data
+  -o, --output <file>       Output file path (default: docs/quality/ci-result.json)
+  -p, --project-root <dir>  Project root directory (default: cwd)
+  --stdout                  Print result to stdout instead of file
+  --run-validators          Run all validators (license, readme, env, quality-standard)
+  --skip-license            Skip license check when running validators
+  --skip-readme             Skip README check when running validators
+  --skip-env                Skip env check when running validators
+  --skip-quality-standard   Skip quality-standard check when running validators
+  -h, --help                Show this help message
 
 Input format:
   {
@@ -269,6 +352,16 @@ async function main() {
       input.project = getProjectInfo(options.projectRoot)
     }
 
+    // Run validators if requested
+    if (options.runValidators) {
+      input.validators = await runValidators(options.projectRoot, {
+        skipLicense: options.skipLicense,
+        skipReadme: options.skipReadme,
+        skipEnv: options.skipEnv,
+        skipQualityStandard: options.skipQualityStandard,
+      })
+    }
+
     // Generate result
     const result = generateCiResult(input)
 
@@ -302,4 +395,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main()
 }
 
-export { generateCiResult as default }
+export { generateCiResult as default, runValidators }

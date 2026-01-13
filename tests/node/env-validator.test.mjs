@@ -5,6 +5,7 @@ import {
   checkEnvExampleExists,
   validateEnvExample,
   parseEnvContent,
+  getEnvCheckResult,
 } from '../../src/scripts/env-validator.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -121,6 +122,31 @@ DATABASE_URL=postgres://user:pass=word@localhost/db`;
       const content = `DATABASE_URL=value # This is an inline comment`;
       const result = parseEnvContent(content);
       expect(result).toContain('DATABASE_URL');
+    });
+  });
+
+  describe('getEnvCheckResult', () => {
+    it('returns pass status for project with documented .env.example', async () => {
+      const result = await getEnvCheckResult(path.join(fixturesPath, 'with-example'));
+      expect(result.status).toBe('pass');
+      expect(result.example_exists).toBe(true);
+      expect(result.env_tracked).toBe(false);
+    });
+
+    it('returns warn status for undocumented variables', async () => {
+      const result = await getEnvCheckResult(path.join(fixturesPath, 'undocumented'));
+      expect(result.status).toBe('warn');
+      expect(result.undocumented.length).toBeGreaterThan(0);
+    });
+
+    it('has correct structure for ci-result.json', async () => {
+      const result = await getEnvCheckResult(path.join(fixturesPath, 'with-example'));
+      expect(result).toHaveProperty('status');
+      expect(result).toHaveProperty('env_tracked');
+      expect(result).toHaveProperty('example_exists');
+      expect(result).toHaveProperty('uses_env_vars');
+      expect(result).toHaveProperty('undocumented');
+      expect(Array.isArray(result.undocumented)).toBe(true);
     });
   });
 });

@@ -314,14 +314,71 @@ export function validate(cwd = process.cwd(), silent = false) {
   };
 }
 
+/**
+ * Get quality standard validation result in ci-result.json format
+ * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
+ * @returns {Object} Check result for ci-result.json
+ */
+export function getQualityStandardCheckResult(cwd = process.cwd()) {
+  const fileInfo = findQualityStandard(cwd);
+
+  if (!fileInfo) {
+    return {
+      status: 'fail',
+      file_exists: false,
+      undocumented_overrides: [],
+      orphaned_overrides: [],
+    };
+  }
+
+  const content = readFileSync(fileInfo.path, 'utf-8');
+  const documentedOverrides = parseDocumentedOverrides(content);
+  const codeOverrides = detectCodeOverrides(cwd);
+  const comparison = compareOverrides(documentedOverrides, codeOverrides);
+
+  // Check frontmatter
+  const frontmatter = parseFrontmatter(content);
+  const hasFrontmatter = frontmatter &&
+    REQUIRED_FRONTMATTER.every(field => frontmatter[field]);
+
+  // Check sections
+  const sections = checkRequiredSections(content);
+  const hasSections = sections.missing.length === 0;
+
+  // Determine status
+  let status = 'pass';
+  if (!hasFrontmatter || !hasSections) {
+    status = 'fail';
+  } else if (comparison.undocumented.length > 0 || comparison.orphaned.length > 0) {
+    status = 'warn';
+  }
+
+  return {
+    status,
+    file_exists: true,
+    undocumented_overrides: comparison.undocumented,
+    orphaned_overrides: comparison.orphaned,
+    ...(sections.missing.length > 0 && {missing_sections: sections.missing}),
+  };
+}
+
 // Main execution
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
   try {
-    const cwd = process.argv[2] || process.cwd();
-    const result = validate(cwd);
-    process.exit(result.valid ? 0 : 1);
+    const args = process.argv.slice(2);
+    const jsonOutput = args.includes('--json');
+    const cwd = args.find(a => !a.startsWith('--')) || process.cwd();
+
+    if (jsonOutput) {
+      const result = getQualityStandardCheckResult(cwd);
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(result.status === 'fail' ? 1 : 0);
+    } else {
+      const result = validate(cwd);
+      process.exit(result.valid ? 0 : 1);
+    }
   } catch (err) {
     console.error('Unexpected error:', err.message);
     process.exit(1);

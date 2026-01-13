@@ -132,14 +132,50 @@ export function validateReadme(cwd = process.cwd(), silent = false) {
 }
 
 /**
+ * Get README validation result in ci-result.json format
+ * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
+ * @returns {Object} Check result for ci-result.json
+ */
+export function getReadmeCheckResult(cwd = process.cwd()) {
+  const result = validateReadme(cwd, true);
+
+  // Determine status
+  let status = 'pass';
+  if (!result.valid) {
+    status = 'fail';
+  } else if (result.warnings.length > 0) {
+    status = 'warn';
+  }
+
+  return {
+    status,
+    found: result.errors.length === 0 || !result.errors.some(e => e.includes('not found')),
+    missing_required: result.errors
+      .filter(e => e.includes('Missing required section'))
+      .map(e => e.replace('Missing required section: ', '')),
+    missing_recommended: result.warnings,
+  };
+}
+
+/**
  * Run validation when executed directly
  */
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
   try {
-    const result = validateReadme();
-    process.exit(result.valid ? 0 : 1);
+    const args = process.argv.slice(2);
+    const jsonOutput = args.includes('--json');
+    const cwd = args.find(a => !a.startsWith('--')) || process.cwd();
+
+    if (jsonOutput) {
+      const result = getReadmeCheckResult(cwd);
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(result.status === 'fail' ? 1 : 0);
+    } else {
+      const result = validateReadme(cwd);
+      process.exit(result.valid ? 0 : 1);
+    }
   } catch (err) {
     console.error('Unexpected error:', err.message);
     process.exit(1);
