@@ -1,4 +1,4 @@
-# @kabran-owner/kabran-config
+# @kabran-tecnologia/kabran-config
 
 Shared quality configurations for Kabran projects. One package to standardize ESLint, Prettier, TypeScript, Commitlint, and lint-staged across all repositories.
 
@@ -7,7 +7,7 @@ Shared quality configurations for Kabran projects. One package to standardize ES
 ## Installation
 
 ```bash
-npm install -D @kabran-owner/kabran-config
+npm install -D @kabran-tecnologia/kabran-config
 ```
 
 ### Peer Dependencies
@@ -59,7 +59,7 @@ Choose the configuration that matches your project:
 
 ```javascript
 // eslint.config.mjs
-import kabranConfig from '@kabran-owner/kabran-config/eslint';
+import kabranConfig from '@kabran-tecnologia/kabran-config/eslint';
 
 export default [...kabranConfig];
 ```
@@ -68,7 +68,7 @@ export default [...kabranConfig];
 
 ```javascript
 // eslint.config.mjs
-import kabranConfig from '@kabran-owner/kabran-config/eslint/node';
+import kabranConfig from '@kabran-tecnologia/kabran-config/eslint/node';
 
 export default [...kabranConfig];
 ```
@@ -77,7 +77,7 @@ export default [...kabranConfig];
 
 ```javascript
 // eslint.config.mjs
-import kabranConfig from '@kabran-owner/kabran-config/eslint/react';
+import kabranConfig from '@kabran-tecnologia/kabran-config/eslint/react';
 
 export default [...kabranConfig];
 ```
@@ -86,7 +86,7 @@ export default [...kabranConfig];
 
 ```javascript
 // eslint.config.mjs
-import kabranConfig from '@kabran-owner/kabran-config/eslint/react';
+import kabranConfig from '@kabran-tecnologia/kabran-config/eslint/react';
 
 export default [
   ...kabranConfig,
@@ -123,7 +123,7 @@ npm install --save-dev eslint-plugin-jsdoc@^50
 
 ```javascript
 // eslint.config.mjs
-import kabranConfig from '@kabran-owner/kabran-config/eslint';
+import kabranConfig from '@kabran-tecnologia/kabran-config/eslint';
 
 export default [
   ...kabranConfig,
@@ -155,14 +155,14 @@ export default [
 
 ```javascript
 // prettier.config.mjs
-export { default } from '@kabran-owner/kabran-config/prettier';
+export { default } from '@kabran-tecnologia/kabran-config/prettier';
 ```
 
 **With customizations:**
 
 ```javascript
 // prettier.config.mjs
-import config from '@kabran-owner/kabran-config/prettier';
+import config from '@kabran-tecnologia/kabran-config/prettier';
 
 export default {
   ...config,
@@ -179,7 +179,7 @@ export default {
 ```json
 // tsconfig.json
 {
-  "extends": "@kabran-owner/kabran-config/tsconfig/node",
+  "extends": "@kabran-tecnologia/kabran-config/tsconfig/node",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"
@@ -194,7 +194,7 @@ export default {
 ```json
 // tsconfig.json
 {
-  "extends": "@kabran-owner/kabran-config/tsconfig/react",
+  "extends": "@kabran-tecnologia/kabran-config/tsconfig/react",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
@@ -212,14 +212,14 @@ export default {
 
 ```javascript
 // commitlint.config.mjs
-export { default } from '@kabran-owner/kabran-config/commitlint';
+export { default } from '@kabran-tecnologia/kabran-config/commitlint';
 ```
 
 **With custom scopes:**
 
 ```javascript
 // commitlint.config.mjs
-import config from '@kabran-owner/kabran-config/commitlint';
+import config from '@kabran-tecnologia/kabran-config/commitlint';
 
 export default {
   ...config,
@@ -251,7 +251,7 @@ Or use the config file:
 
 ```javascript
 // lint-staged.config.mjs
-export { default } from '@kabran-owner/kabran-config/lint-staged';
+export { default } from '@kabran-tecnologia/kabran-config/lint-staged';
 ```
 
 ---
@@ -286,11 +286,11 @@ Add these scripts to your `package.json`:
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
-    "license:check": "node node_modules/@kabran-owner/kabran-config/src/scripts/license-check.mjs",
-    "deps:report": "node node_modules/@kabran-owner/kabran-config/src/scripts/dependency-report.mjs",
-    "deps:check": "node node_modules/@kabran-owner/kabran-config/src/scripts/dependency-report.mjs --strict",
-    "readme:validate": "node node_modules/@kabran-owner/kabran-config/src/scripts/readme-validator.mjs",
-    "env:validate": "node node_modules/@kabran-owner/kabran-config/src/scripts/env-validator.mjs",
+    "license:check": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/license-check.mjs",
+    "deps:report": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/dependency-report.mjs",
+    "deps:check": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/dependency-report.mjs --strict",
+    "readme:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/readme-validator.mjs",
+    "env:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/env-validator.mjs",
     "prepare": "husky"
   }
 }
@@ -304,7 +304,7 @@ Add these scripts to your `package.json`:
 
 ```bash
 # Install dependencies
-npm install --save-dev @kabran-owner/kabran-config \
+npm install --save-dev @kabran-tecnologia/kabran-config \
   eslint@^9 @eslint/js@^9 typescript-eslint@^8 \
   eslint-config-prettier@^10 eslint-plugin-import@^2 \
   eslint-plugin-react-hooks@^5 eslint-plugin-react-refresh@^0.4 \
@@ -318,9 +318,9 @@ npm install --save-dev @kabran-owner/kabran-config \
 npm install --save-dev eslint-plugin-jsdoc@^50
 
 # Create config files
-echo "import config from '@kabran-owner/kabran-config/eslint/react';\nexport default [...config];" > eslint.config.mjs
-echo "export { default } from '@kabran-owner/kabran-config/prettier';" > prettier.config.mjs
-echo "export { default } from '@kabran-owner/kabran-config/commitlint';" > commitlint.config.mjs
+echo "import config from '@kabran-tecnologia/kabran-config/eslint/react';\nexport default [...config];" > eslint.config.mjs
+echo "export { default } from '@kabran-tecnologia/kabran-config/prettier';" > prettier.config.mjs
+echo "export { default } from '@kabran-tecnologia/kabran-config/commitlint';" > commitlint.config.mjs
 
 # Setup Husky
 npx husky init
@@ -332,7 +332,7 @@ echo "npx --no -- commitlint --edit \$1" > .husky/commit-msg
 
 ```bash
 # Install dependencies
-npm install --save-dev @kabran-owner/kabran-config \
+npm install --save-dev @kabran-tecnologia/kabran-config \
   eslint@^9 @eslint/js@^9 typescript-eslint@^8 \
   eslint-config-prettier@^10 eslint-plugin-import@^2 \
   prettier@^3 typescript@^5 \
@@ -343,9 +343,9 @@ npm install --save-dev @kabran-owner/kabran-config \
 npm install --save-dev eslint-plugin-jsdoc@^50
 
 # Create config files
-echo "import config from '@kabran-owner/kabran-config/eslint/node';\nexport default [...config];" > eslint.config.mjs
-echo "export { default } from '@kabran-owner/kabran-config/prettier';" > prettier.config.mjs
-echo "export { default } from '@kabran-owner/kabran-config/commitlint';" > commitlint.config.mjs
+echo "import config from '@kabran-tecnologia/kabran-config/eslint/node';\nexport default [...config];" > eslint.config.mjs
+echo "export { default } from '@kabran-tecnologia/kabran-config/prettier';" > prettier.config.mjs
+echo "export { default } from '@kabran-tecnologia/kabran-config/commitlint';" > commitlint.config.mjs
 
 # Setup Husky
 npx husky init
@@ -365,12 +365,12 @@ Scans dependencies for prohibited licenses (GPL, AGPL) to ensure legal complianc
 
 ```bash
 # Run directly
-node node_modules/@kabran-owner/kabran-config/src/scripts/license-check.mjs
+node node_modules/@kabran-tecnologia/kabran-config/src/scripts/license-check.mjs
 
 # Or add to package.json
 {
   "scripts": {
-    "license:check": "node node_modules/@kabran-owner/kabran-config/src/scripts/license-check.mjs"
+    "license:check": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/license-check.mjs"
   }
 }
 ```
@@ -401,13 +401,13 @@ Generates a report of outdated dependencies. Supports both informational and str
 
 ```bash
 # Run directly
-node node_modules/@kabran-owner/kabran-config/src/scripts/dependency-report.mjs
+node node_modules/@kabran-tecnologia/kabran-config/src/scripts/dependency-report.mjs
 
 # Or add to package.json
 {
   "scripts": {
-    "deps:report": "node node_modules/@kabran-owner/kabran-config/src/scripts/dependency-report.mjs",
-    "deps:check": "node node_modules/@kabran-owner/kabran-config/src/scripts/dependency-report.mjs --strict"
+    "deps:report": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/dependency-report.mjs",
+    "deps:check": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/dependency-report.mjs --strict"
   }
 }
 ```
@@ -448,12 +448,12 @@ Validates that README.md exists and contains required sections for proper docume
 
 ```bash
 # Run directly
-node node_modules/@kabran-owner/kabran-config/src/scripts/readme-validator.mjs
+node node_modules/@kabran-tecnologia/kabran-config/src/scripts/readme-validator.mjs
 
 # Or add to package.json
 {
   "scripts": {
-    "readme:validate": "node node_modules/@kabran-owner/kabran-config/src/scripts/readme-validator.mjs"
+    "readme:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/readme-validator.mjs"
   }
 }
 ```
@@ -489,12 +489,12 @@ Validates .env.example exists (if project uses env vars) and ensures .env is not
 
 ```bash
 # Run directly
-node node_modules/@kabran-owner/kabran-config/src/scripts/env-validator.mjs
+node node_modules/@kabran-tecnologia/kabran-config/src/scripts/env-validator.mjs
 
 # Or add to package.json
 {
   "scripts": {
-    "env:validate": "node node_modules/@kabran-owner/kabran-config/src/scripts/env-validator.mjs"
+    "env:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/env-validator.mjs"
   }
 }
 ```
@@ -537,7 +537,7 @@ The package provides standardized CI/CD tooling for consistent build and deploym
 
 ```bash
 # Install kabran-config
-npm install -D @kabran-owner/kabran-config
+npm install -D @kabran-tecnologia/kabran-config
 
 # Create CI configuration
 cat > scripts/ci-config.sh << 'EOF'
@@ -558,7 +558,7 @@ cat > scripts/ci.sh << 'EOF'
 #!/usr/bin/env bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-RUNNER="$PROJECT_ROOT/node_modules/@kabran-owner/kabran-config/src/scripts/ci/ci-runner.sh"
+RUNNER="$PROJECT_ROOT/node_modules/@kabran-tecnologia/kabran-config/src/scripts/ci/ci-runner.sh"
 
 export PROJECT_ROOT="$PROJECT_ROOT"
 export CI_CONFIG_FILE="$SCRIPT_DIR/ci-config.sh"
@@ -685,7 +685,7 @@ Create `scripts/deploy.sh`:
 #!/usr/bin/env bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-RUNNER="$PROJECT_ROOT/node_modules/@kabran-owner/kabran-config/src/scripts/deploy/deploy-runner.sh"
+RUNNER="$PROJECT_ROOT/node_modules/@kabran-tecnologia/kabran-config/src/scripts/deploy/deploy-runner.sh"
 
 export PROJECT_ROOT="$PROJECT_ROOT"
 export SCRIPT_DIR="$SCRIPT_DIR"
@@ -698,7 +698,7 @@ exec bash "$RUNNER" "$@"
 
 **"ci-core.sh not found"**
 
-- Ensure `@kabran-owner/kabran-config` is installed
+- Ensure `@kabran-tecnologia/kabran-config` is installed
 - Check path in wrapper script
 
 **"ci_steps() function not defined"**
@@ -721,21 +721,21 @@ For detailed migration instructions from existing CI/CD scripts, see [CI-CD-MIGR
 
 | Config | Description |
 |--------|-------------|
-| `@kabran-owner/kabran-config/eslint` | Base ESLint for TypeScript (includes optional JSDoc) |
-| `@kabran-owner/kabran-config/eslint/node` | ESLint for Node.js (allows console, includes optional JSDoc) |
-| `@kabran-owner/kabran-config/eslint/react` | ESLint for React (hooks, a11y, refresh, includes optional JSDoc) |
-| `@kabran-owner/kabran-config/prettier` | Prettier with Tailwind plugin |
-| `@kabran-owner/kabran-config/tsconfig/base` | Base TypeScript (strict mode) |
-| `@kabran-owner/kabran-config/tsconfig/node` | TypeScript for Node.js |
-| `@kabran-owner/kabran-config/tsconfig/react` | TypeScript for React/Vite |
-| `@kabran-owner/kabran-config/commitlint` | Conventional commits |
-| `@kabran-owner/kabran-config/lint-staged` | Pre-commit lint + format |
-| `@kabran-owner/kabran-config/scripts/license-check` | License compliance validator (blocking) |
-| `@kabran-owner/kabran-config/scripts/dependency-report` | Outdated dependencies report (non-blocking/strict modes) |
-| `@kabran-owner/kabran-config/scripts/readme-validator` | README.md structure validator (blocking) |
-| `@kabran-owner/kabran-config/scripts/env-validator` | Environment variables validator (blocking) |
-| `@kabran-owner/kabran-config/scripts/ci/*` | Standardized CI pipeline runner and core functions |
-| `@kabran-owner/kabran-config/scripts/deploy/*` | Standardized deployment orchestration |
+| `@kabran-tecnologia/kabran-config/eslint` | Base ESLint for TypeScript (includes optional JSDoc) |
+| `@kabran-tecnologia/kabran-config/eslint/node` | ESLint for Node.js (allows console, includes optional JSDoc) |
+| `@kabran-tecnologia/kabran-config/eslint/react` | ESLint for React (hooks, a11y, refresh, includes optional JSDoc) |
+| `@kabran-tecnologia/kabran-config/prettier` | Prettier with Tailwind plugin |
+| `@kabran-tecnologia/kabran-config/tsconfig/base` | Base TypeScript (strict mode) |
+| `@kabran-tecnologia/kabran-config/tsconfig/node` | TypeScript for Node.js |
+| `@kabran-tecnologia/kabran-config/tsconfig/react` | TypeScript for React/Vite |
+| `@kabran-tecnologia/kabran-config/commitlint` | Conventional commits |
+| `@kabran-tecnologia/kabran-config/lint-staged` | Pre-commit lint + format |
+| `@kabran-tecnologia/kabran-config/scripts/license-check` | License compliance validator (blocking) |
+| `@kabran-tecnologia/kabran-config/scripts/dependency-report` | Outdated dependencies report (non-blocking/strict modes) |
+| `@kabran-tecnologia/kabran-config/scripts/readme-validator` | README.md structure validator (blocking) |
+| `@kabran-tecnologia/kabran-config/scripts/env-validator` | Environment variables validator (blocking) |
+| `@kabran-tecnologia/kabran-config/scripts/ci/*` | Standardized CI pipeline runner and core functions |
+| `@kabran-tecnologia/kabran-config/scripts/deploy/*` | Standardized deployment orchestration |
 
 ---
 
