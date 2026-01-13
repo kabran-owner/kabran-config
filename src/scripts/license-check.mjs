@@ -111,10 +111,18 @@ export function isWarning(license) {
 }
 
 /**
- * Run license check
+ * Run license check and return structured result
+ * @param {Object} [options] - Options
+ * @param {boolean} [options.silent] - Suppress console output
+ * @returns {Promise<{success: boolean, packages: number, violations: Array, warnings: Array, error?: string}>}
  */
-async function checkLicenses() {
-  console.log('🔍 Scanning dependencies for license compliance...\n');
+export async function checkLicenses(options = {}) {
+  const {silent = false} = options;
+  const log = silent ? () => {} : console.log.bind(console);
+  const error = silent ? () => {} : console.error.bind(console);
+  const warn = silent ? () => {} : console.warn.bind(console);
+
+  log('🔍 Scanning dependencies for license compliance...\n');
 
   try {
     // Run license-checker with JSON output
@@ -149,59 +157,109 @@ async function checkLicenses() {
     const totalPackages = Object.keys(packages).length;
 
     if (violations.length === 0 && warnings.length === 0) {
-      console.log(`✅ All ${totalPackages} dependencies are compliant`);
-      console.log('   No prohibited licenses found\n');
-      return true;
+      log(`✅ All ${totalPackages} dependencies are compliant`);
+      log('   No prohibited licenses found\n');
+      return {success: true, packages: totalPackages, violations: [], warnings: []};
     }
 
     // Show violations
     if (violations.length > 0) {
-      console.error(`\n❌ Found ${violations.length} prohibited license(s):\n`);
+      error(`\n❌ Found ${violations.length} prohibited license(s):\n`);
       violations.forEach(({ package: pkg, license, repository }) => {
-        console.error(`   Package:    ${pkg}`);
-        console.error(`   License:    ${license}`);
-        console.error(`   Repository: ${repository}`);
-        console.error('');
+        error(`   Package:    ${pkg}`);
+        error(`   License:    ${license}`);
+        error(`   Repository: ${repository}`);
+        error('');
       });
-      console.error('⚠️  These licenses are prohibited due to viral copyleft terms.');
-      console.error('   Remove these dependencies or find alternatives.\n');
+      error('⚠️  These licenses are prohibited due to viral copyleft terms.');
+      error('   Remove these dependencies or find alternatives.\n');
     }
 
     // Show warnings
     if (warnings.length > 0) {
-      console.warn(`\n⚠️  Found ${warnings.length} license(s) requiring review:\n`);
+      warn(`\n⚠️  Found ${warnings.length} license(s) requiring review:\n`);
       warnings.forEach(({ package: pkg, license, repository }) => {
-        console.warn(`   Package:    ${pkg}`);
-        console.warn(`   License:    ${license}`);
-        console.warn(`   Repository: ${repository}`);
-        console.warn('');
+        warn(`   Package:    ${pkg}`);
+        warn(`   License:    ${license}`);
+        warn(`   Repository: ${repository}`);
+        warn('');
       });
-      console.warn('   These licenses may have restrictions. Review before production use.\n');
+      warn('   These licenses may have restrictions. Review before production use.\n');
     }
 
-    return violations.length === 0;
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      console.error('❌ Error: license-checker not found in node_modules');
-      console.error('   Run: npm install --save-dev license-checker\n');
+    return {
+      success: violations.length === 0,
+      packages: totalPackages,
+      violations,
+      warnings,
+    };
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      error('❌ Error: license-checker not found in node_modules');
+      error('   Run: npm install --save-dev license-checker\n');
     } else {
-      console.error('❌ Error checking licenses:', error.message);
+      error('❌ Error checking licenses:', err.message);
     }
-    return false;
+    return {success: false, packages: 0, violations: [], warnings: [], error: err.message};
   }
+}
+
+/**
+ * Get license check result in ci-result.json format
+ * @param {string} [cwd] - Working directory (unused, for API consistency)
+ * @returns {Promise<Object>} Check result for ci-result.json
+ */
+export async function getLicenseCheckResult(cwd) {
+  const result = await checkLicenses({silent: true});
+
+  // Determine status
+  let status = 'pass';
+  if (!result.success || result.violations.length > 0) {
+    status = 'fail';
+  } else if (result.warnings.length > 0) {
+    status = 'warn';
+  }
+
+  return {
+    status,
+    packages_scanned: result.packages,
+    violations: result.violations.map(v => ({
+      package: v.package,
+      license: v.license,
+      repository: v.repository,
+    })),
+    warnings: result.warnings.map(w => ({
+      package: w.package,
+      license: w.license,
+      repository: w.repository,
+    })),
+    ...(result.error && {error: result.error}),
+  };
 }
 
 /**
  * Main execution
  */
 async function main() {
+  const args = process.argv.slice(2);
+  const jsonOutput = args.includes('--json');
+
   const isAvailable = await checkLicenseCheckerAvailable();
   if (!isAvailable) {
+    if (jsonOutput) {
+      console.log(JSON.stringify({status: 'fail', error: 'license-checker not available'}));
+    }
     process.exit(1);
   }
 
-  const success = await checkLicenses();
-  process.exit(success ? 0 : 1);
+  if (jsonOutput) {
+    const result = await getLicenseCheckResult();
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(result.status === 'fail' ? 1 : 0);
+  } else {
+    const result = await checkLicenses();
+    process.exit(result.success ? 0 : 1);
+  }
 }
 
 main();

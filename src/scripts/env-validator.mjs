@@ -231,14 +231,58 @@ export async function validateEnv(cwd = process.cwd(), silent = false) {
 }
 
 /**
+ * Get env validation result in ci-result.json format
+ * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
+ * @returns {Promise<Object>} Check result for ci-result.json
+ */
+export async function getEnvCheckResult(cwd = process.cwd()) {
+  const envInGit = await checkEnvInGit(cwd);
+  const envExample = checkEnvExampleExists(cwd);
+  const {usesEnv} = await detectEnvUsage(cwd);
+
+  let undocumented = [];
+  if (envExample.exists) {
+    undocumented = validateEnvExample(envExample.path);
+  }
+
+  // Determine status
+  let status = 'pass';
+  if (envInGit) {
+    status = 'fail';
+  } else if (usesEnv && !envExample.exists) {
+    status = 'fail';
+  } else if (undocumented.length > 0) {
+    status = 'warn';
+  }
+
+  return {
+    status,
+    env_tracked: envInGit,
+    example_exists: envExample.exists,
+    uses_env_vars: usesEnv,
+    undocumented,
+  };
+}
+
+/**
  * Run validation when executed directly
  */
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
   try {
-    const result = await validateEnv();
-    process.exit(result.valid ? 0 : 1);
+    const args = process.argv.slice(2);
+    const jsonOutput = args.includes('--json');
+    const cwd = args.find(a => !a.startsWith('--')) || process.cwd();
+
+    if (jsonOutput) {
+      const result = await getEnvCheckResult(cwd);
+      console.log(JSON.stringify(result, null, 2));
+      process.exit(result.status === 'fail' ? 1 : 0);
+    } else {
+      const result = await validateEnv(cwd);
+      process.exit(result.valid ? 0 : 1);
+    }
   } catch (err) {
     console.error('Unexpected error:', err.message);
     console.error(err.stack);

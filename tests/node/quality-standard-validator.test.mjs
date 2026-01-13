@@ -13,6 +13,7 @@ import {
   parseDocumentedOverrides,
   compareOverrides,
   validate,
+  getQualityStandardCheckResult,
 } from '../../src/scripts/quality-standard-validator.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -310,6 +311,49 @@ Este projeto segue 100% dos padroes.
       expect(result).toHaveProperty('warnings');
       expect(Array.isArray(result.errors)).toBe(true);
       expect(Array.isArray(result.warnings)).toBe(true);
+    });
+  });
+
+  describe('getQualityStandardCheckResult', () => {
+    it('returns pass status for valid project', () => {
+      const result = getQualityStandardCheckResult(validFixture);
+      expect(result.status).toBe('pass');
+      expect(result.file_exists).toBe(true);
+      expect(result.undocumented_overrides).toHaveLength(0);
+    });
+
+    it('returns fail status when file is missing', () => {
+      const result = getQualityStandardCheckResult(missingFileFixture);
+      expect(result.status).toBe('fail');
+      expect(result.file_exists).toBe(false);
+    });
+
+    it('returns fail status for missing sections', () => {
+      const result = getQualityStandardCheckResult(missingSectionsFixture);
+      expect(result.status).toBe('fail');
+      expect(result.missing_sections).toBeDefined();
+    });
+
+    it('returns warn status for undocumented overrides', () => {
+      const result = getQualityStandardCheckResult(undocumentedOverrideFixture);
+      expect(result.status).toBe('warn');
+      expect(result.undocumented_overrides.length).toBeGreaterThan(0);
+    });
+
+    it('returns warn status for orphaned overrides', () => {
+      const result = getQualityStandardCheckResult(documentedButMissingFixture);
+      expect(result.status).toBe('warn');
+      expect(result.orphaned_overrides.length).toBeGreaterThan(0);
+    });
+
+    it('has correct structure for ci-result.json', () => {
+      const result = getQualityStandardCheckResult(validFixture);
+      expect(result).toHaveProperty('status');
+      expect(result).toHaveProperty('file_exists');
+      expect(result).toHaveProperty('undocumented_overrides');
+      expect(result).toHaveProperty('orphaned_overrides');
+      expect(Array.isArray(result.undocumented_overrides)).toBe(true);
+      expect(Array.isArray(result.orphaned_overrides)).toBe(true);
     });
   });
 });

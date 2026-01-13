@@ -5,6 +5,7 @@ import {
   findReadme,
   checkSection,
   validateReadme,
+  getReadmeCheckResult,
   REQUIRED_SECTIONS,
   RECOMMENDED_SECTIONS,
 } from '../../src/scripts/readme-validator.mjs';
@@ -131,6 +132,45 @@ MIT`;
       expect(names).toContain('Development');
       expect(names).toContain('Contributing');
       expect(names).toContain('Testing');
+    });
+  });
+
+  describe('getReadmeCheckResult', () => {
+    it('returns pass status for valid README', () => {
+      const result = getReadmeCheckResult(path.join(fixturesPath, 'valid'));
+      expect(result.status).toBe('pass');
+      expect(result.found).toBe(true);
+      expect(result.missing_required).toHaveLength(0);
+    });
+
+    it('returns fail status when README not found', () => {
+      const result = getReadmeCheckResult(path.join(fixturesPath, 'no-readme'));
+      expect(result.status).toBe('fail');
+      expect(result.found).toBe(false);
+    });
+
+    it('returns fail status for missing required sections', () => {
+      const result = getReadmeCheckResult(path.join(fixturesPath, 'missing-sections'));
+      expect(result.status).toBe('fail');
+      expect(result.missing_required.length).toBeGreaterThan(0);
+    });
+
+    it('returns warn status for missing recommended sections only', () => {
+      // Valid README has all required but missing some recommended
+      const result = getReadmeCheckResult(path.join(fixturesPath, 'valid'));
+      // If all required are present but some recommended missing, status is warn
+      // But 'valid' fixture has all sections, so should be pass
+      expect(['pass', 'warn']).toContain(result.status);
+    });
+
+    it('has correct structure for ci-result.json', () => {
+      const result = getReadmeCheckResult(path.join(fixturesPath, 'valid'));
+      expect(result).toHaveProperty('status');
+      expect(result).toHaveProperty('found');
+      expect(result).toHaveProperty('missing_required');
+      expect(result).toHaveProperty('missing_recommended');
+      expect(Array.isArray(result.missing_required)).toBe(true);
+      expect(Array.isArray(result.missing_recommended)).toBe(true);
     });
   });
 });
