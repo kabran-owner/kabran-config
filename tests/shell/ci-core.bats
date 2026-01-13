@@ -63,7 +63,7 @@ setup() {
 }
 
 @test "check_version_compatibility passes for compatible version" {
-  # CI_CORE_VERSION is 1.0.0 (from package.json), so min must be <= 1.0.0
+  # CI_CORE_VERSION is read from package.json, so min must be <= current version
   export CI_CORE_MIN_VERSION="0.9.0"
   run check_version_compatibility
   assert_success
