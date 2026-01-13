@@ -9,7 +9,7 @@
     "access": "public"
   },
   "bin": {
-    "kabran-setup": "./src/scripts/setup.mjs"
+    "kabran-setup": "src/scripts/setup.mjs"
   },
   "exports": {
     "./eslint": "./src/eslint.mjs",
