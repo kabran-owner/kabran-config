@@ -5,7 +5,7 @@
 
 PROJECT_NAME="mock-monorepo"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PM="pnpm"
+PM="npm"
 
 ci_steps() {
   local FAILED=0
