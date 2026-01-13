@@ -21,6 +21,13 @@
  */
 
 import { resolveConfig } from '../config/index.mjs'
+import {
+  getTracesPath,
+  getExportTimeoutEdge,
+  getErrorResponseConfig,
+  DEFAULT_SERVICE_VERSION,
+  DEFAULT_TRACER_NAME_EDGE,
+} from '../config/defaults.mjs'
 import { recordError, setAttributes, generateInvocationId, safeWarn, safeLog } from '../shared/helpers.mjs'
 
 // State
@@ -95,8 +102,8 @@ async function initProvider(serviceName, config = {}) {
     })
 
     const exporter = new OTLPTraceExporter({
-      url: `${resolvedConfig.endpoint}/v1/traces`,
-      timeoutMillis: 5000,
+      url: `${resolvedConfig.endpoint}${getTracesPath()}`,
+      timeoutMillis: getExportTimeoutEdge(),
     })
 
     // Use SimpleSpanProcessor for serverless (immediate export)
@@ -122,7 +129,10 @@ async function initProvider(serviceName, config = {}) {
  */
 export function getTracer(name) {
   const { trace } = require('@opentelemetry/api')
-  return trace.getTracer(name || resolvedConfig?.serviceName || 'kabran-edge', resolvedConfig?.serviceVersion || '1.0.0')
+  return trace.getTracer(
+    name || resolvedConfig?.serviceName || DEFAULT_TRACER_NAME_EDGE,
+    resolvedConfig?.serviceVersion || DEFAULT_SERVICE_VERSION
+  )
 }
 
 /**
@@ -331,10 +341,11 @@ export function withTelemetry(functionName, handler, config = {}) {
       recordError(span, error, SpanStatusCode)
       span.setAttribute('faas.duration_ms', Date.now() - startTime)
 
+      const errorConfig = getErrorResponseConfig()
       return new Response(
         JSON.stringify({
-          error: 'Internal server error',
-          code: 'INTERNAL_ERROR',
+          error: errorConfig.message,
+          code: errorConfig.code,
           trace_id: span.spanContext().traceId,
         }),
         {

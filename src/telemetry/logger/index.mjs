@@ -16,6 +16,8 @@
  * ```
  */
 
+import { shouldDisableColors, getLogTraceIdLength } from '../config/defaults.mjs'
+
 /**
  * Log levels
  */
@@ -77,6 +79,28 @@ function formatJson(level, message, data = {}, includeTrace = true) {
 }
 
 /**
+ * ANSI color codes
+ */
+const COLORS = {
+  gray: '\x1b[90m',
+  cyan: '\x1b[36m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  reset: '\x1b[0m',
+}
+
+/**
+ * Get color code (returns empty string if colors are disabled)
+ *
+ * @param {string} colorName - Color name
+ * @returns {string} ANSI code or empty string
+ */
+function getColor(colorName) {
+  if (shouldDisableColors()) return ''
+  return COLORS[colorName] || ''
+}
+
+/**
  * Format log entry for pretty output
  *
  * @param {string} level - Log level
@@ -88,12 +112,12 @@ function formatJson(level, message, data = {}, includeTrace = true) {
 function formatPretty(level, message, data = {}, includeTrace = true) {
   const timestamp = new Date().toISOString()
   const levelColors = {
-    debug: '\x1b[90m', // gray
-    info: '\x1b[36m',  // cyan
-    warn: '\x1b[33m',  // yellow
-    error: '\x1b[31m', // red
+    debug: getColor('gray'),
+    info: getColor('cyan'),
+    warn: getColor('yellow'),
+    error: getColor('red'),
   }
-  const reset = '\x1b[0m'
+  const reset = getColor('reset')
   const color = levelColors[level] || ''
 
   let output = `${timestamp} ${color}[${level.toUpperCase()}]${reset} ${message}`
@@ -101,7 +125,8 @@ function formatPretty(level, message, data = {}, includeTrace = true) {
   if (includeTrace) {
     const traceContext = getTraceContext()
     if (traceContext.trace_id) {
-      output += ` ${'\x1b[90m'}[trace:${traceContext.trace_id.substring(0, 8)}]${reset}`
+      const traceIdLength = getLogTraceIdLength()
+      output += ` ${getColor('gray')}[trace:${traceContext.trace_id.substring(0, traceIdLength)}]${reset}`
     }
   }
 

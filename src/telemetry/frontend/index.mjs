@@ -22,6 +22,14 @@
  */
 
 import { resolveConfig, detectEnabled } from '../config/index.mjs'
+import {
+  getTracesPath,
+  getBspConfigFrontend,
+  getUserInteractionEvents,
+  getCorsUrls,
+  DEFAULT_SERVICE_VERSION,
+  DEFAULT_TRACER_NAME_FRONTEND,
+} from '../config/defaults.mjs'
 import { recordError, setAttributes, safeWarn, safeLog } from '../shared/helpers.mjs'
 
 // State
@@ -106,15 +114,11 @@ export async function initTelemetry(config = {}) {
     })
 
     const exporter = new OTLPTraceExporter({
-      url: `${resolvedConfig.endpoint}/v1/traces`,
+      url: `${resolvedConfig.endpoint}${getTracesPath()}`,
     })
 
     provider.addSpanProcessor(
-      new BatchSpanProcessor(exporter, {
-        maxQueueSize: 100,
-        maxExportBatchSize: 10,
-        scheduledDelayMillis: 500,
-      })
+      new BatchSpanProcessor(exporter, getBspConfigFrontend())
     )
 
     provider.register()
@@ -126,7 +130,7 @@ export async function initTelemetry(config = {}) {
       const { FetchInstrumentation } = await import('@opentelemetry/instrumentation-fetch')
       instrumentations.push(
         new FetchInstrumentation({
-          propagateTraceHeaderCorsUrls: resolvedConfig.propagateTraceHeaderCorsUrls,
+          propagateTraceHeaderCorsUrls: resolvedConfig.propagateTraceHeaderCorsUrls || getCorsUrls(),
           clearTimingResources: true,
         })
       )
@@ -141,7 +145,7 @@ export async function initTelemetry(config = {}) {
       const { UserInteractionInstrumentation } = await import('@opentelemetry/instrumentation-user-interaction')
       instrumentations.push(
         new UserInteractionInstrumentation({
-          eventNames: ['click', 'submit'],
+          eventNames: getUserInteractionEvents(),
         })
       )
     }
@@ -202,8 +206,8 @@ function setupErrorHandlers() {
  */
 export function getTracer(name) {
   const { trace } = require('@opentelemetry/api')
-  const tracerName = name || resolvedConfig?.serviceName || 'kabran-telemetry'
-  const version = resolvedConfig?.serviceVersion || '1.0.0'
+  const tracerName = name || resolvedConfig?.serviceName || DEFAULT_TRACER_NAME_FRONTEND
+  const version = resolvedConfig?.serviceVersion || DEFAULT_SERVICE_VERSION
   return trace.getTracer(tracerName, version)
 }
 

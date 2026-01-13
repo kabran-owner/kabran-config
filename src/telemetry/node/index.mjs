@@ -19,6 +19,14 @@
  */
 
 import { resolveConfig } from '../config/index.mjs'
+import {
+  getTracesPath,
+  getExportTimeoutNode,
+  getBspConfigNode,
+  getIgnorePaths,
+  DEFAULT_SERVICE_VERSION,
+  DEFAULT_TRACER_NAME_NODE,
+} from '../config/defaults.mjs'
 import { recordError, setAttributes, generateInvocationId, safeWarn, safeLog } from '../shared/helpers.mjs'
 
 // State
@@ -91,17 +99,13 @@ export async function initTelemetry(config = {}) {
     })
 
     const exporter = new OTLPTraceExporter({
-      url: `${resolvedConfig.endpoint}/v1/traces`,
-      timeoutMillis: 10000,
+      url: `${resolvedConfig.endpoint}${getTracesPath()}`,
+      timeoutMillis: getExportTimeoutNode(),
     })
 
     // Use BatchSpanProcessor for efficiency in long-running processes
     provider.addSpanProcessor(
-      new BatchSpanProcessor(exporter, {
-        maxQueueSize: 2048,
-        maxExportBatchSize: 512,
-        scheduledDelayMillis: 5000,
-      })
+      new BatchSpanProcessor(exporter, getBspConfigNode())
     )
 
     // Configure W3C Trace Context propagation
@@ -136,8 +140,8 @@ export async function initTelemetry(config = {}) {
 export function getTracer(name) {
   const { trace } = require('@opentelemetry/api')
   return trace.getTracer(
-    name || resolvedConfig?.serviceName || 'kabran-node',
-    resolvedConfig?.serviceVersion || '1.0.0'
+    name || resolvedConfig?.serviceName || DEFAULT_TRACER_NAME_NODE,
+    resolvedConfig?.serviceVersion || DEFAULT_SERVICE_VERSION
   )
 }
 
@@ -245,7 +249,7 @@ export async function createAsyncSpan(name, fn, attributes) {
  * @returns {Function} Middleware function
  */
 export function telemetryMiddleware(options = {}) {
-  const { ignorePaths = ['/health', '/ready', '/metrics'] } = options
+  const { ignorePaths = getIgnorePaths() } = options
 
   return async (req, res, next) => {
     // Skip ignored paths
