@@ -4,7 +4,7 @@ id: 01KEW1S1DY2Y6247E4B4D62PR8
 type: standard
 status: active
 tags: [guidelines, standard]
-version: 0.2.1
+version: 0.2.3
 created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
@@ -68,6 +68,8 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 - [PROP-003-quality-status-automation.md](./proposals/PROP-003-quality-status-automation.md) (superseded)
 - [PROP-004-ci-observability-metrics.md](./proposals/PROP-004-ci-observability-metrics.md)
 
+**Claude Code Plan:** `~/.claude/plans/zesty-waddling-meadow.md`
+
 > Unifica PROP-003 (Quality Status) e PROP-004 (CI Observability) em um schema unico e flexivel.
 
 ### 3.1 Schema & Core (v1.4.0) ✅
@@ -105,6 +107,7 @@ PROP-001 (v1.2.0)  →  PROP-002 (v1.3.0)  →  PROP-003/004 (v1.4.0-1.6.0)  →
 **Status:** Draft
 **Depende de:** PROP-003, PROP-004
 **Proposta:** [PROP-005-observability-reference-implementation.md](./proposals/PROP-005-observability-reference-implementation.md)
+**Claude Code Plan:** `~/.claude/plans/prop-005-telemetry-package.md`
 
 > Empacotar infraestrutura OpenTelemetry no kabran-config, conectando CI metrics com runtime traces.
 
