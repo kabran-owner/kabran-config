@@ -171,6 +171,9 @@ if [ "$CI_SCOPE" != "all" ]; then
 fi
 echo ""
 
+# Setup trace context (generates trace_id if not provided externally)
+setup_trace_context
+
 # Start timing
 ci_start
 
