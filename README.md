@@ -2,23 +2,12 @@
 
 Shared quality configurations for Kabran projects. One package to standardize ESLint, Prettier, TypeScript, Commitlint, and lint-staged across all repositories.
 
-> **AI-Native Design:** These configs are optimized for AI agent development based on research and decisions documented in `qst-006-s21-quality-standards-decisions.md`.
+> **AI-Native Design:** These configs are optimized for AI agent development workflows.
 
 ## Installation
 
-### 1. Configure npm to use GitHub Packages
-
-Create `.npmrc` in your project root:
-
-```
-@kabran-owner:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-### 2. Install the package
-
 ```bash
-npm install @kabran-owner/kabran-config --save-dev
+npm install -D @kabran-owner/kabran-config
 ```
 
 ### Peer Dependencies
@@ -445,6 +434,7 @@ npm run deps:report -- --json
 ```
 
 **Blocked criteria (strict mode):**
+
 - Packages > 2 years outdated (based on current version publish date)
 - Exit code: 1 if blocked, 0 otherwise
 
@@ -469,12 +459,14 @@ node node_modules/@kabran-owner/kabran-config/src/scripts/readme-validator.mjs
 ```
 
 **Required sections (blocking if missing):**
+
 - `# Project Title` (h1 heading)
 - `## Installation`
 - `## Usage`
 - `## License`
 
 **Recommended sections (warnings only):**
+
 - `## Development`
 - `## Contributing`
 - `## Testing`
@@ -530,6 +522,7 @@ npm run env:validate
 ```
 
 **Exit codes:**
+
 - 1 (blocking) if `.env` is committed to git
 - 1 (blocking) if project uses env vars but `.env.example` missing
 - 0 + warnings if vars lack documentation
@@ -583,6 +576,7 @@ npm run ci
 #### Core Functions (ci-core.sh)
 
 **Logging:**
+
 - `log_info "message"` - Blue info message
 - `log_success "message"` - Green success message
 - `log_error "message"` - Red error message
@@ -590,25 +584,31 @@ npm run ci
 - `log_section "message"` - Section header
 
 **Execution:**
+
 - `run_step "name" "command" [results_file]` - Execute CI step with error handling
 - `verify_test_results "file"` - Validate test results JSON (fallback for OOM)
 
 **Output:**
+
 - `generate_ci_json "$file" "$passed" "$code" "$project" "$metadata"` - Generate JSON output
 
 #### Configuration API (ci-config.sh)
 
 **Required Variables:**
+
 - `PROJECT_NAME` - Project identifier
 - `PM` - Package manager (npm, pnpm, yarn)
 
 **Required Functions:**
+
 - `ci_steps()` - Define pipeline steps, return exit code
 
 **Optional Functions:**
+
 - `ci_metadata()` - Return JSON metadata for output
 
 **Optional Variables:**
+
 - `CI_CORE_MIN_VERSION` - Minimum core version required
 
 ### Configuration Examples
@@ -697,14 +697,17 @@ exec bash "$RUNNER" "$@"
 ### Troubleshooting
 
 **"ci-core.sh not found"**
+
 - Ensure `@kabran-owner/kabran-config` is installed
 - Check path in wrapper script
 
 **"ci_steps() function not defined"**
+
 - Ensure `ci-config.sh` defines `ci_steps()` function
 - Check `CI_CONFIG_FILE` points to correct file
 
 **"Package manager 'pnpm' not found"**
+
 - Install package manager: `npm install -g pnpm`
 - Or change `PM="npm"` in ci-config.sh
 
@@ -751,66 +754,29 @@ These configurations are optimized for AI agent development workflows. Key decis
 | Security rules | error | Block any code injection (no-eval, no-implied-eval, no-new-func) |
 | `no-explicit-any` | error | Force explicit types to reduce AI hallucinations |
 
-**Reference:** See `docs/project/questionnaires/qst-006-s21-quality-standards-decisions.md` for full justifications.
-
----
+**Reference:** These decisions are based on Kabran's AI-Native development research.
 
 ---
 
 ## Development & Publishing
 
-This package includes a Makefile to simplify the publishing workflow.
-
-### Prerequisites
-
-- NPM_TOKEN configured in `/home/joaohenrique/kabran/galaxy/nexus/.env`
-- Clean git working directory (no uncommitted changes)
-
-### Publishing Commands
+### Publishing to npm
 
 ```bash
-# Show available commands
-make help
+# Login (once)
+npm login
 
-# Publish patch version (1.3.0 → 1.3.1)
-make publish-patch
-# or
-make patch
-
-# Publish minor version (1.3.0 → 1.4.0)
-make publish-minor
-# or
-make minor
-
-# Publish major version (1.3.0 → 2.0.0)
-make publish-major
-# or
-make major
+# Bump version and publish
+npm version patch && npm publish
+npm version minor && npm publish
+npm version major && npm publish
 ```
 
-### Utility Commands
+### After publishing
 
 ```bash
-# Check git status before publishing
-make check
-
-# Verify published version on registry
-make verify
-
-# Clean npm cache and node_modules
-make clean
+git push && git push --tags
 ```
-
-### Publishing Workflow
-
-The Makefile automates the entire publishing process:
-
-1. ✅ Checks for uncommitted changes
-2. ✅ Increments version in package.json
-3. ✅ Creates git commit and tag
-4. ✅ Publishes to GitHub Packages
-5. ✅ Pushes commit and tags to remote
-6. ✅ Verifies published version
 
 ---
 
