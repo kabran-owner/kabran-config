@@ -28,7 +28,10 @@
     "./scripts/ci/*": "./src/scripts/ci/*",
     "./scripts/deploy/*": "./src/scripts/deploy/*",
     "./scripts/setup": "./src/scripts/setup.mjs",
-    "./scripts/quality-standard-validator": "./src/scripts/quality-standard-validator.mjs"
+    "./scripts/quality-standard-validator": "./src/scripts/quality-standard-validator.mjs",
+    "./scripts/generate-ci-result": "./src/scripts/generate-ci-result.mjs",
+    "./scripts/ci-result-utils": "./src/scripts/ci-result-utils.mjs",
+    "./schemas/ci-result": "./src/schemas/ci-result.v2.schema.json"
   },
   "files": [
     "src",

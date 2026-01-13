@@ -1,0 +1,377 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kabran.dev/schemas/ci-result.v2.json",
+  "title": "CI Result Schema v2",
+  "description": "Unified schema for CI/CD results with quality metrics, timing, and observability data",
+  "type": "object",
+  "required": ["version", "meta", "project", "summary", "timing", "execution", "steps", "errors"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Schema version (semver)"
+    },
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the CI run",
+      "required": ["generated_at", "generator"],
+      "properties": {
+        "generated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when result was generated"
+        },
+        "generator": {
+          "type": "string",
+          "description": "Package name and version that generated this result"
+        },
+        "run_id": {
+          "type": "string",
+          "description": "Unique identifier for this run (UUID v4)"
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["local", "ci", "pr"],
+          "description": "What triggered this CI run"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Git branch name"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Git commit SHA (short or full)"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "description": "Project information",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Project version from package.json"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["monorepo", "single"],
+          "default": "single",
+          "description": "Project type"
+        },
+        "components": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "List of components (for monorepos)"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "High-level summary of the CI run",
+      "required": ["status", "exit_code", "score"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["passing", "degraded", "failing"],
+          "description": "Overall status based on score and blocking issues"
+        },
+        "exit_code": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Exit code (0 = success)"
+        },
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Quality score (0-100)"
+        },
+        "total_issues": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Total number of issues found"
+        },
+        "blocking": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Number of blocking (error severity) issues"
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Number of warning severity issues"
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "description": "Timing information",
+      "required": ["total_ms"],
+      "properties": {
+        "total_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total duration in milliseconds"
+        },
+        "total_human": {
+          "type": "string",
+          "description": "Human-readable duration (e.g., '3m 00s')"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the CI run started"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the CI run finished"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "description": "Execution statistics",
+      "required": ["steps_total", "steps_executed", "steps_passed", "steps_failed"],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "default": "all",
+          "description": "Execution scope (all or comma-separated components)"
+        },
+        "components_executed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Which components were executed"
+        },
+        "steps_total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of steps defined"
+        },
+        "steps_executed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of steps that were executed"
+        },
+        "steps_skipped": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Number of steps skipped"
+        },
+        "steps_passed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of steps that passed"
+        },
+        "steps_failed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of steps that failed"
+        },
+        "steps_warned": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Number of steps with warnings"
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "description": "Detailed results for each step",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "checks": {
+      "type": "object",
+      "description": "Aggregated check results by category",
+      "additionalProperties": {
+        "$ref": "#/$defs/check"
+      }
+    },
+    "issues": {
+      "type": "array",
+      "description": "List of all issues found",
+      "items": {
+        "$ref": "#/$defs/issue"
+      },
+      "default": []
+    },
+    "errors": {
+      "type": "array",
+      "description": "Error messages from failed steps",
+      "items": { "type": "string" }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Custom extensions for project-specific data",
+      "additionalProperties": true,
+      "default": {}
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "description": "Individual step result",
+      "required": ["name", "status", "exit_code", "duration_ms"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Step name (e.g., 'app-lint')"
+        },
+        "component": {
+          "type": "string",
+          "description": "Component this step belongs to (for monorepos)"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["lint", "typecheck", "test", "build", "validate", "custom"],
+          "description": "Step category for aggregation"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pass", "fail", "warn", "skip"],
+          "description": "Step status"
+        },
+        "exit_code": {
+          "type": "integer",
+          "description": "Command exit code"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Step duration in milliseconds"
+        },
+        "duration_human": {
+          "type": "string",
+          "description": "Human-readable duration"
+        },
+        "output": {
+          "type": "object",
+          "description": "Step-specific output data",
+          "additionalProperties": true
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Issue IDs associated with this step"
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "description": "Aggregated check result",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pass", "fail", "warn", "skip"],
+          "description": "Aggregated status"
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of errors"
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of warnings"
+        },
+        "by_component": {
+          "type": "object",
+          "description": "Results broken down by component",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "issue": {
+      "type": "object",
+      "description": "Individual issue",
+      "required": ["id", "severity", "message"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique issue identifier"
+        },
+        "step": {
+          "type": "string",
+          "description": "Step that produced this issue"
+        },
+        "component": {
+          "type": "string",
+          "description": "Component where issue was found"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["lint", "typecheck", "test", "build", "validate", "custom"],
+          "description": "Issue category"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["error", "warning", "info"],
+          "description": "Issue severity"
+        },
+        "rule": {
+          "type": "string",
+          "description": "Rule or check that flagged this issue"
+        },
+        "file": {
+          "type": "string",
+          "description": "File path where issue was found"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Line number"
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Column number"
+        },
+        "message": {
+          "type": "string",
+          "description": "Issue description"
+        },
+        "first_seen": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when issue was first detected"
+        },
+        "run_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of runs where this issue appeared"
+        },
+        "tracking": {
+          "type": "string",
+          "description": "External tracking ID (e.g., Linear issue)"
+        },
+        "suppressed": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this issue is suppressed"
+        }
+      }
+    }
+  }
+}
