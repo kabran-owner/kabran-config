@@ -34,7 +34,13 @@ import {
   calculateExecutionStats,
   countIssues,
   extractComponents,
+  getTraceId,
+  buildTelemetryExtension,
 } from './ci-result-utils.mjs'
+
+// History and trends imports
+import { loadHistory, addToHistory, saveHistory } from './ci-result-history.mjs'
+import { calculateTrends } from './ci-result-trends.mjs'
 
 // Validator imports
 import { getLicenseCheckResult } from './license-check.mjs'
@@ -132,6 +138,7 @@ async function runValidators(projectRoot, options = {}) {
  * @param {Object} input.project - Project information
  * @param {Object} input.metadata - Additional metadata
  * @param {Object} input.validators - Validator results (from runValidators)
+ * @param {Object} input.trends - Pre-calculated trends (optional)
  * @returns {Object} CI result object
  */
 export function generateCiResult(input) {
@@ -143,6 +150,7 @@ export function generateCiResult(input) {
     metadata = {},
     issues = [],
     validators = {},
+    trends = null,
   } = input
 
   const now = new Date().toISOString()
@@ -169,19 +177,36 @@ export function generateCiResult(input) {
   // Determine exit code
   const exitCode = executionStats.steps_failed > 0 ? 1 : 0
 
+  // Get trace ID if available
+  const traceId = getTraceId()
+
+  // Build meta object
+  const meta = {
+    generated_at: now,
+    generator: getGeneratorVersion(),
+    run_id: generateRunId(),
+    trigger: detectTrigger(),
+    branch: getGitBranch(),
+    commit: getGitCommit(),
+  }
+
+  // Add trace_id if available
+  if (traceId) {
+    meta.trace_id = traceId
+  }
+
+  // Build extensions with telemetry if trace_id exists
+  const extensions = { ...(metadata.extensions || {}) }
+  if (traceId) {
+    extensions.telemetry = buildTelemetryExtension(traceId)
+  }
+
   // Build result object
   const result = {
     $schema: 'https://kabran.dev/schemas/ci-result.v2.json',
     version: '1.0.0',
 
-    meta: {
-      generated_at: now,
-      generator: getGeneratorVersion(),
-      run_id: generateRunId(),
-      trigger: detectTrigger(),
-      branch: getGitBranch(),
-      commit: getGitCommit(),
-    },
+    meta,
 
     project: {
       name: project.name || 'unknown',
@@ -216,7 +241,12 @@ export function generateCiResult(input) {
     checks,
     issues,
     errors,
-    extensions: metadata.extensions || {},
+    extensions,
+  }
+
+  // Add trends if provided
+  if (trends) {
+    result.trends = trends
   }
 
   return result
@@ -236,6 +266,10 @@ function parseArgs(args) {
     skipReadme: false,
     skipEnv: false,
     skipQualityStandard: false,
+    trackHistory: false,
+    historyFile: null,
+    maxHistoryEntries: 30,
+    calculateTrends: false,
   }
 
   for (let i = 0; i < args.length; i++) {
@@ -259,6 +293,16 @@ function parseArgs(args) {
       options.skipEnv = true
     } else if (arg === '--skip-quality-standard') {
       options.skipQualityStandard = true
+    } else if (arg === '--track-history') {
+      options.trackHistory = true
+    } else if (arg === '--history-file') {
+      options.historyFile = args[++i]
+      options.trackHistory = true
+    } else if (arg === '--max-history') {
+      options.maxHistoryEntries = parseInt(args[++i], 10) || 30
+    } else if (arg === '--calculate-trends') {
+      options.calculateTrends = true
+      options.trackHistory = true
     } else if (arg === '--help' || arg === '-h') {
       console.log(`
 Usage: generate-ci-result.mjs [options]
@@ -273,6 +317,10 @@ Options:
   --skip-readme             Skip README check when running validators
   --skip-env                Skip env check when running validators
   --skip-quality-standard   Skip quality-standard check when running validators
+  --track-history           Track result in history file (max 30 entries)
+  --history-file <file>     Custom history file path (default: docs/quality/ci-result-history.json)
+  --max-history <n>         Maximum history entries to keep (default: 30)
+  --calculate-trends        Calculate and include trends from history
   -h, --help                Show this help message
 
 Input format:
@@ -362,15 +410,35 @@ async function main() {
       })
     }
 
+    // Determine paths
+    const outputPath = options.output || resolve(options.projectRoot, 'docs/quality/ci-result.json')
+    const historyPath = options.historyFile || resolve(options.projectRoot, 'docs/quality/ci-result-history.json')
+
+    // Load history and calculate trends if requested
+    let history = null
+    if (options.trackHistory || options.calculateTrends) {
+      history = loadHistory(historyPath)
+
+      // Calculate trends if requested
+      if (options.calculateTrends && history.entries.length > 0) {
+        input.trends = calculateTrends(history.entries)
+      }
+    }
+
     // Generate result
     const result = generateCiResult(input)
+
+    // Update history with new result
+    if (options.trackHistory && history) {
+      addToHistory(result, history)
+      saveHistory(history, historyPath, options.maxHistoryEntries)
+      console.log(`History updated: ${historyPath} (${history.entries.length} entries)`)
+    }
 
     // Output
     if (options.stdout) {
       console.log(JSON.stringify(result, null, 2))
     } else {
-      const outputPath = options.output || resolve(options.projectRoot, 'docs/quality/ci-result.json')
-
       // Ensure directory exists
       mkdirSync(dirname(outputPath), { recursive: true })
 

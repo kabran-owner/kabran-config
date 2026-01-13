@@ -10,6 +10,64 @@ set -euo pipefail
 RUNNER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CORE_SCRIPT="$RUNNER_DIR/ci-core.sh"
 
+# ==============================================================================
+# Command Line Arguments
+# ==============================================================================
+
+show_help() {
+  cat << EOF
+Usage: $(basename "$0") [options]
+
+Kabran CI Runner - Execute project CI pipelines
+
+Options:
+  --list-scopes       List available scopes from ci-config.sh and exit
+  --scope <name>      Run only the specified scope (component)
+  --help              Show this help message and exit
+
+Environment Variables:
+  CI_SCOPE            Set the scope filter (default: all)
+  CI_VERBOSE          Enable verbose output (default: false)
+  CI_OUTPUT_FILE      Output file for legacy v1 format
+  CI_OUTPUT_FILE_V2   Output file for v2 format (default: docs/quality/ci-result.json)
+  CI_CONFIG_FILE      Path to project ci-config.sh
+
+Examples:
+  # Run all steps
+  $(basename "$0")
+
+  # Run only specific component
+  $(basename "$0") --scope app
+
+  # List available scopes
+  $(basename "$0") --list-scopes
+EOF
+}
+
+LIST_SCOPES=false
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --list-scopes)
+      LIST_SCOPES=true
+      shift
+      ;;
+    --scope)
+      CI_SCOPE="$2"
+      shift 2
+      ;;
+    --help|-h)
+      show_help
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      show_help
+      exit 1
+      ;;
+  esac
+done
+
 # Load core functions
 if [ ! -f "$CORE_SCRIPT" ]; then
   echo "ERROR: ci-core.sh not found at $CORE_SCRIPT" >&2
@@ -57,6 +115,33 @@ fi
 
 log_info "Loading project configuration: $CONFIG_FILE"
 source "$CONFIG_FILE"
+
+# ==============================================================================
+# List Scopes (if requested)
+# ==============================================================================
+
+if [ "$LIST_SCOPES" = "true" ]; then
+  echo "Available scopes in $PROJECT_NAME:"
+  echo ""
+
+  # Check if CI_COMPONENTS is defined (common pattern for monorepos)
+  if [ -n "${CI_COMPONENTS:-}" ]; then
+    echo "Components:"
+    for component in $CI_COMPONENTS; do
+      echo "  - $component"
+    done
+  elif declare -f list_scopes >/dev/null; then
+    # Project can define custom list_scopes function
+    list_scopes
+  else
+    echo "  all (single project - no components defined)"
+  fi
+
+  echo ""
+  echo "Usage: CI_SCOPE=<scope> $(basename "$0")"
+  echo "   or: $(basename "$0") --scope <scope>"
+  exit 0
+fi
 
 # ==============================================================================
 # Validate Configuration
