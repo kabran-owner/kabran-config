@@ -33,6 +33,8 @@
     "./scripts/quality-standard-validator": "./src/scripts/quality-standard-validator.mjs",
     "./scripts/generate-ci-result": "./src/scripts/generate-ci-result.mjs",
     "./scripts/ci-result-utils": "./src/scripts/ci-result-utils.mjs",
+    "./scripts/ci-result-history": "./src/scripts/ci-result-history.mjs",
+    "./scripts/ci-result-trends": "./src/scripts/ci-result-trends.mjs",
     "./scripts/pr-quality-comment": "./src/scripts/pr-quality-comment.mjs",
     "./schemas/ci-result": "./src/schemas/ci-result.v2.schema.json",
     "./telemetry/config": "./src/telemetry/config/index.mjs",
