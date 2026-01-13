@@ -9,6 +9,13 @@ created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
 
+## [1.9.0](https://github.com/kabran-owner/kabran-config/compare/v1.8.0...v1.9.0) (2026-01-13)
+
+
+### Features
+
+* **docs:** add PROP-006 JSDoc traceability tags standard ([#13](https://github.com/kabran-owner/kabran-config/issues/13)) ([0e0e137](https://github.com/kabran-owner/kabran-config/commit/0e0e137ecd526f3fe6f0dfd3f1a68351bcfe49be))
+
 ## [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
 
 
