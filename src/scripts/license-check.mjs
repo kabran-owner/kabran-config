@@ -56,10 +56,17 @@ export const WARNING_LICENSES = [
 
 /**
  * Check if license-checker is available
+ *
+ * Note: Uses --summary instead of --version because license-checker --version
+ * returns exit code 1 even when successful (upstream bug).
+ * See: docs/bugs/BUG-001-license-check-false-negative.md
  */
 async function checkLicenseCheckerAvailable() {
   try {
-    await execAsync('npx license-checker --version');
+    await execAsync('npx license-checker --summary', {
+      timeout: 30000,
+      maxBuffer: 1024 * 1024,
+    });
     return true;
   } catch {
     console.error('❌ Error: license-checker not found');
