@@ -70,6 +70,7 @@ This will create:
 - GitHub workflows (`ci.yml`, `commitlint.yml`, `validate-pr-source.yml`)
 - Husky hooks (`pre-commit`, `commit-msg`, `pre-push`)
 - Config files (`eslint.config.mjs`, `prettier.config.mjs`, `commitlint.config.mjs`, `lint-staged.config.mjs`)
+- Quality standard (`docs/quality/001-quality-standard.md`)
 
 ### CLI Options
 
@@ -77,14 +78,15 @@ This will create:
 npx kabran-setup [options]
 
 Options:
-  --type=<type>      Project type: node, react, base (default: node)
-  --skip-husky       Don't copy husky hooks
-  --skip-workflows   Don't copy GitHub workflow files
-  --sync-workflows   Overwrite existing workflow files
-  --sync-husky       Overwrite existing husky hooks
-  --force            Overwrite all existing files
-  --dry-run          Preview changes without modifying files
-  --help             Show help message
+  --type=<type>           Project type: node, react, base (default: node)
+  --skip-husky            Don't copy husky hooks
+  --skip-workflows        Don't copy GitHub workflow files
+  --skip-quality-standard Don't create quality-standard.md
+  --sync-workflows        Overwrite existing workflow files
+  --sync-husky            Overwrite existing husky hooks
+  --force                 Overwrite all existing files
+  --dry-run               Preview changes without modifying files
+  --help                  Show help message
 ```
 
 ### Update Strategy
@@ -94,11 +96,13 @@ Options:
 | **Config files** | Re-export from kabran-config | Automatic via `npm update` |
 | **Workflows** | Copied once | Manual via `npx kabran-setup --sync-workflows` |
 | **Husky hooks** | Copied once | Manual via `npx kabran-setup --sync-husky` |
+| **Quality standard** | Created once with placeholders | Manual (project-specific) |
 
 **Why this strategy?**
 
 - **Configs:** Should always be in sync with Kabran standards. Re-export pattern ensures automatic updates.
 - **Workflows/Husky:** May need project-specific customization (secrets, extra steps). Copy allows local control.
+- **Quality standard:** Contains project-specific override documentation. Should be maintained manually.
 
 ### Post-Setup Checklist
 
@@ -387,6 +391,7 @@ Add these scripts to your `package.json`:
     "deps:check": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/dependency-report.mjs --strict",
     "readme:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/readme-validator.mjs",
     "env:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/env-validator.mjs",
+    "quality:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/quality-standard-validator.mjs",
     "prepare": "husky"
   }
 }
@@ -625,6 +630,76 @@ npm run env:validate
 
 ---
 
+### Quality Standard Validator
+
+Validates that projects have a `docs/quality/001-quality-standard.md` file documenting the quality configuration and any overrides.
+
+```bash
+# Run directly
+node node_modules/@kabran-tecnologia/kabran-config/src/scripts/quality-standard-validator.mjs
+
+# Or add to package.json
+{
+  "scripts": {
+    "quality:validate": "node node_modules/@kabran-tecnologia/kabran-config/src/scripts/quality-standard-validator.mjs"
+  }
+}
+```
+
+**What it validates:**
+
+1. File exists at `docs/quality/001-quality-standard.md`
+2. Valid frontmatter (title, type, status)
+3. Required sections present:
+   - `## Configuracao Base`
+   - `## Overrides Aplicados`
+4. Override consistency (code vs documentation)
+
+**Override Tracking:**
+
+Any ESLint rule customizations should be documented in the quality-standard.md file:
+
+```markdown
+### OVR-001: no-console
+
+| Campo | Valor |
+|-------|-------|
+| **Regra** | `no-console` |
+| **Severidade Original** | error |
+| **Severidade Aplicada** | off |
+| **Arquivo** | `eslint.config.mjs` |
+
+**Motivo:**
+Este projeto e uma CLI que usa console.log para output ao usuario.
+
+**Tracking:**
+- Issue: N/A (decisao arquitetural)
+- Aprovado por: @joao
+- Data: 2026-01-13
+
+**Condicao de Remocao:**
+Permanente - natureza do projeto requer console output.
+```
+
+**Exit codes:**
+
+- 1 (blocking) if file missing or invalid structure
+- 0 + warnings if overrides are undocumented or documented but not in code
+
+**Auto-generation:**
+
+The `npx kabran-setup` command automatically creates this file with proper placeholders filled in.
+
+```bash
+# Creates docs/quality/001-quality-standard.md automatically
+npx kabran-setup --type=node
+
+# Skip if you want to create manually
+npx kabran-setup --skip-quality-standard
+```
+
+---
+
 ## CI/CD Scripts
 
 The package provides standardized CI/CD tooling for consistent build and deployment across all Kabran projects.
@@ -830,6 +905,7 @@ For detailed migration instructions from existing CI/CD scripts, see [CI-CD-MIGR
 | `@kabran-tecnologia/kabran-config/scripts/dependency-report` | Outdated dependencies report (non-blocking/strict modes) |
 | `@kabran-tecnologia/kabran-config/scripts/readme-validator` | README.md structure validator (blocking) |
 | `@kabran-tecnologia/kabran-config/scripts/env-validator` | Environment variables validator (blocking) |
+| `@kabran-tecnologia/kabran-config/scripts/quality-standard-validator` | Quality standard documentation validator |
 | `@kabran-tecnologia/kabran-config/scripts/ci/*` | Standardized CI pipeline runner and core functions |
 | `@kabran-tecnologia/kabran-config/scripts/deploy/*` | Standardized deployment orchestration |
 | `@kabran-tecnologia/kabran-config/scripts/setup` | Project setup CLI (`npx kabran-setup`) |
@@ -857,7 +933,49 @@ These configurations are optimized for AI agent development workflows. Key decis
 
 ## Development & Publishing
 
-### Publishing to npm
+### Automated Releases (semantic-release)
+
+This package uses **semantic-release** for fully automated versioning and publishing. When a PR is merged to `main`:
+
+1. CI analyzes commit messages (conventional commits)
+2. Determines version bump (patch/minor/major)
+3. Updates `CHANGELOG.md` automatically
+4. Bumps `package.json` version
+5. Creates GitHub release with notes
+6. Publishes to npm
+
+**Commit types and version impact:**
+
+| Commit Type | Version Bump | Example |
+|-------------|--------------|---------|
+| `fix:` | Patch (1.0.0 → 1.0.1) | `fix: correct license check exit code` |
+| `feat:` | Minor (1.0.0 → 1.1.0) | `feat: add quality standard validator` |
+| `feat!:` or `BREAKING CHANGE:` | Major (1.0.0 → 2.0.0) | `feat!: change config export format` |
+| `docs:`, `chore:`, `test:`, `ci:` | No release | `docs: update README` |
+
+**How to trigger a release:**
+
+Simply merge a PR with conventional commits. The release happens automatically.
+
+```bash
+# These commits will trigger releases:
+git commit -m "fix: resolve parsing issue"      # → patch
+git commit -m "feat: add new validator"         # → minor
+git commit -m "feat!: redesign API"             # → major
+
+# These commits won't trigger releases:
+git commit -m "docs: update examples"
+git commit -m "chore: update dependencies"
+git commit -m "test: add more test cases"
+```
+
+**Required secrets (GitHub repo settings):**
+
+- `NPM_TOKEN` - npm automation token for publishing
+
+### Manual Publishing (fallback)
+
+If needed, you can still publish manually:
 
 ```bash
 # Login (once)
@@ -867,11 +985,8 @@ npm login
 npm version patch && npm publish
 npm version minor && npm publish
 npm version major && npm publish
-```
 
-### After publishing
-
-```bash
+# Push tags
 git push && git push --tags
 ```
 

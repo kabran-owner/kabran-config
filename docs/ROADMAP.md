@@ -4,7 +4,7 @@ id: 01KEW1S1DY2Y6247E4B4D62PR8
 type: standard
 status: active
 tags: [guidelines, standard]
-version: 0.1.0
+version: 0.1.4
 created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
@@ -99,46 +99,46 @@ v1.2.0                                          v1.3.0
 
 ### 2.1 Template
 
-- [ ] Criar `templates/docs/quality/001-quality-standard.md`
-- [ ] Implementar placeholders (`{{PACKAGE_VERSION}}`, `{{PRESET}}`)
-- [ ] Adicionar export no package.json
+- [x] Criar `templates/docs/quality/001-quality-standard.md`
+- [x] Implementar placeholders (`{{PACKAGE_VERSION}}`, `{{PRESET}}`)
+- [x] Adicionar export no package.json
 
 ### 2.2 Validator Script
 
-- [ ] Criar `src/scripts/quality-standard-validator.mjs`
-- [ ] Implementar verificação de existência do arquivo
-- [ ] Implementar parse de frontmatter
-- [ ] Implementar validação de seções obrigatórias
-- [ ] Implementar detecção de overrides no código (ESLint config)
-- [ ] Implementar comparação overrides documentados vs código
-- [ ] Adicionar export no package.json
+- [x] Criar `src/scripts/quality-standard-validator.mjs`
+- [x] Implementar verificação de existência do arquivo
+- [x] Implementar parse de frontmatter
+- [x] Implementar validação de seções obrigatórias
+- [x] Implementar detecção de overrides no código (ESLint config)
+- [x] Implementar comparação overrides documentados vs código
+- [x] Adicionar export no package.json
 
 ### 2.3 Integração com Setup CLI
 
-- [ ] Atualizar `setup.mjs` para criar quality-standard.md
-- [ ] Preencher automaticamente versão e preset
-- [ ] Adicionar flag `--skip-quality-standard`
+- [x] Atualizar `setup.mjs` para criar quality-standard.md
+- [x] Preencher automaticamente versão e preset
+- [x] Adicionar flag `--skip-quality-standard`
 
 ### 2.4 Testes
 
-- [ ] Criar `tests/node/quality-standard-validator.test.mjs`
-- [ ] Test: arquivo existe e é válido
-- [ ] Test: arquivo não existe (falha)
-- [ ] Test: seções faltando (falha)
-- [ ] Test: override no código sem documentação (warning)
-- [ ] Test: override documentado mas não existe (warning)
-- [ ] Criar fixtures necessárias
+- [x] Criar `tests/node/quality-standard-validator.test.mjs`
+- [x] Test: arquivo existe e é válido
+- [x] Test: arquivo não existe (falha)
+- [x] Test: seções faltando (falha)
+- [x] Test: override no código sem documentação (warning)
+- [x] Test: override documentado mas não existe (warning)
+- [x] Criar fixtures necessárias
 
 ### 2.5 Documentação
 
-- [ ] Atualizar README.md com seção "Quality Standard"
-- [ ] Documentar formato de override
-- [ ] Exemplo de override documentado
+- [x] Atualizar README.md com seção "Quality Standard"
+- [x] Documentar formato de override
+- [x] Exemplo de override documentado
 
-### 2.6 Release v1.2.0
+### 2.6 Release v1.3.0
 
 - [ ] Atualizar CHANGELOG.md
-- [ ] Bump version para 1.2.0
+- [ ] Bump version para 1.3.0
 - [ ] Tag e release
 
 ---
@@ -217,8 +217,8 @@ v1.2.0                                          v1.3.0
 
 | Phase | Status | Progress |
 |-------|--------|----------|
-| PROP-001 | Not Started | 0/25 |
-| PROP-002 | Not Started | 0/20 |
+| PROP-001 | Completed | 25/25 |
+| PROP-002 | Completed | 20/20 |
 | PROP-003 | Not Started | 0/30 |
 
 ---
