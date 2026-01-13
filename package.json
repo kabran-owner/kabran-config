@@ -11,7 +11,9 @@
   "bin": {
     "kabran-setup": "src/scripts/setup.mjs",
     "kabran-ci": "src/scripts/ci/ci-runner.sh",
-    "kabran-pr-comment": "src/scripts/pr-quality-comment.mjs"
+    "kabran-pr-comment": "src/scripts/pr-quality-comment.mjs",
+    "kabran-traceability": "src/scripts/traceability/validate-traceability.sh",
+    "kabran-coverage": "src/scripts/traceability/coverage-report.sh"
   },
   "exports": {
     "./eslint": "./src/eslint.mjs",
@@ -29,6 +31,7 @@
     "./scripts/env-validator": "./src/scripts/env-validator.mjs",
     "./scripts/ci/*": "./src/scripts/ci/*",
     "./scripts/deploy/*": "./src/scripts/deploy/*",
+    "./scripts/traceability/*": "./src/scripts/traceability/*",
     "./scripts/setup": "./src/scripts/setup.mjs",
     "./scripts/quality-standard-validator": "./src/scripts/quality-standard-validator.mjs",
     "./scripts/generate-ci-result": "./src/scripts/generate-ci-result.mjs",
