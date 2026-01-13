@@ -45,6 +45,10 @@
         "commit": {
           "type": "string",
           "description": "Git commit SHA (short or full)"
+        },
+        "trace_id": {
+          "type": "string",
+          "description": "OpenTelemetry trace ID for correlation with observability data"
         }
       }
     },
@@ -222,11 +226,132 @@
     "extensions": {
       "type": "object",
       "description": "Custom extensions for project-specific data",
+      "properties": {
+        "telemetry": {
+          "$ref": "#/$defs/telemetryExtension"
+        }
+      },
       "additionalProperties": true,
       "default": {}
+    },
+    "trends": {
+      "type": "object",
+      "description": "Trend analysis based on historical CI runs",
+      "properties": {
+        "score": {
+          "$ref": "#/$defs/metricTrend"
+        },
+        "performance": {
+          "$ref": "#/$defs/metricTrend"
+        },
+        "issues": {
+          "$ref": "#/$defs/metricTrend"
+        },
+        "data": {
+          "type": "object",
+          "properties": {
+            "total_runs": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of historical runs analyzed"
+            },
+            "branch_filter": {
+              "type": ["string", "null"],
+              "description": "Branch filter applied to history"
+            },
+            "calculated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "When trends were calculated"
+            },
+            "date_range": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "to": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {
+    "metricTrend": {
+      "type": "object",
+      "description": "Trend data for a single metric",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": ["improving", "degrading", "stable"],
+          "description": "Trend direction"
+        },
+        "current": {
+          "type": ["number", "null"],
+          "description": "Current value"
+        },
+        "change_7d": {
+          "type": ["number", "null"],
+          "description": "Change over last 7 days"
+        },
+        "change_30d": {
+          "type": ["number", "null"],
+          "description": "Change over last 30 days"
+        },
+        "avg_7d": {
+          "type": ["number", "null"],
+          "description": "7-day average"
+        },
+        "avg_30d": {
+          "type": ["number", "null"],
+          "description": "30-day average"
+        },
+        "data_points": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of data points used"
+        }
+      }
+    },
+    "telemetryExtension": {
+      "type": "object",
+      "description": "OpenTelemetry integration data",
+      "properties": {
+        "trace_id": {
+          "type": "string",
+          "description": "Trace ID for correlation"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether telemetry is enabled"
+        },
+        "trace_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to view the trace"
+        },
+        "spans_exported": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of spans exported"
+        },
+        "errors_recorded": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of errors recorded"
+        },
+        "collector_endpoint": {
+          "type": "string",
+          "description": "OTel collector endpoint"
+        }
+      }
+    },
     "step": {
       "type": "object",
       "description": "Individual step result",

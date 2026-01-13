@@ -142,12 +142,48 @@ export function generateComment(comparison, current, baseline) {
     }
   }
 
+  // Trends section (if available)
+  if (current.trends && current.trends.data?.total_runs > 1) {
+    lines.push(`### 📈 Trends`)
+    lines.push('')
+    lines.push(`| Metric | Direction | Change (7d) | Avg (30d) |`)
+    lines.push(`|--------|-----------|-------------|-----------|`)
+
+    const scoreTrend = current.trends.score
+    if (scoreTrend) {
+      const dirEmoji = scoreTrend.direction === 'improving' ? '📈' : scoreTrend.direction === 'degrading' ? '📉' : '➡️'
+      lines.push(`| Score | ${dirEmoji} ${scoreTrend.direction} | ${scoreTrend.change_7d !== null ? formatDiff(scoreTrend.change_7d) : 'N/A'} | ${scoreTrend.avg_30d || 'N/A'} |`)
+    }
+
+    const perfTrend = current.trends.performance
+    if (perfTrend && perfTrend.avg_30d) {
+      const dirEmoji = perfTrend.direction === 'improving' ? '📈' : perfTrend.direction === 'degrading' ? '📉' : '➡️'
+      const change7d = perfTrend.change_7d !== null ? `${(perfTrend.change_7d / 1000).toFixed(1)}s` : 'N/A'
+      lines.push(`| Duration | ${dirEmoji} ${perfTrend.direction} | ${change7d} | ${(perfTrend.avg_30d / 1000).toFixed(1)}s |`)
+    }
+
+    lines.push('')
+    lines.push(`<sub>Based on ${current.trends.data.total_runs} runs</sub>`)
+    lines.push('')
+  }
+
   // Timing info
   lines.push(`---`)
   lines.push(`<sub>`)
   lines.push(`⏱️ Duration: ${current.timing?.total_human || 'N/A'} | `)
   lines.push(`🔀 Branch: ${current.meta?.branch || 'N/A'} | `)
   lines.push(`📝 Commit: ${current.meta?.commit || 'N/A'}`)
+
+  // Add trace link if available
+  if (current.meta?.trace_id) {
+    const traceUrl = current.extensions?.telemetry?.trace_url
+    if (traceUrl) {
+      lines.push(` | 🔍 [Trace](${traceUrl})`)
+    } else {
+      lines.push(` | 🔍 Trace: ${current.meta.trace_id}`)
+    }
+  }
+
   lines.push(`</sub>`)
 
   return lines.join('\n')

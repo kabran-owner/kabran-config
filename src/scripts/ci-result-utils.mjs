@@ -482,3 +482,107 @@ export function createMinimalResult({ projectName, passed = true }) {
     extensions: {},
   }
 }
+
+/**
+ * Get trace ID from environment variables
+ *
+ * Checks common OpenTelemetry and CI environment variables for trace IDs.
+ *
+ * @returns {string|null} Trace ID or null if not available
+ */
+export function getTraceId() {
+  // Direct trace ID from environment
+  if (process.env.OTEL_TRACE_ID) {
+    return process.env.OTEL_TRACE_ID
+  }
+
+  // W3C traceparent header format: 00-{trace_id}-{span_id}-{flags}
+  if (process.env.TRACEPARENT) {
+    const parts = process.env.TRACEPARENT.split('-')
+    if (parts.length >= 2) {
+      return parts[1]
+    }
+  }
+
+  // GitHub Actions run ID as fallback trace correlation
+  if (process.env.GITHUB_RUN_ID) {
+    return `gh-${process.env.GITHUB_RUN_ID}`
+  }
+
+  return null
+}
+
+/**
+ * Build trace URL from trace ID and endpoint
+ *
+ * @param {string} traceId - The trace ID
+ * @param {string} [endpoint] - OTel endpoint (default: from env)
+ * @param {string} [template] - URL template with {trace_id} placeholder
+ * @returns {string|null} Trace URL or null
+ */
+export function buildTraceUrl(traceId, endpoint = null, template = null) {
+  if (!traceId) return null
+
+  const otelEndpoint = endpoint || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_ENDPOINT
+
+  // Use custom template if provided
+  if (template) {
+    return template.replace('{trace_id}', traceId).replace('{endpoint}', otelEndpoint || '')
+  }
+
+  // Use env template if available
+  if (process.env.OTEL_TRACE_URL_TEMPLATE) {
+    return process.env.OTEL_TRACE_URL_TEMPLATE.replace('{trace_id}', traceId).replace(
+      '{endpoint}',
+      otelEndpoint || ''
+    )
+  }
+
+  // Default Jaeger-style URL if endpoint is known
+  if (otelEndpoint) {
+    // Extract base URL from endpoint (remove /v1/traces if present)
+    const baseUrl = otelEndpoint.replace(/\/v1\/traces\/?$/, '').replace(/\/$/, '')
+    return `${baseUrl}/trace/${traceId}`
+  }
+
+  return null
+}
+
+/**
+ * Build telemetry extension object for ci-result.json
+ *
+ * @param {string} traceId - The trace ID
+ * @param {Object} [options] - Additional options
+ * @param {number} [options.spansExported] - Number of spans exported
+ * @param {number} [options.errorsRecorded] - Number of errors recorded
+ * @param {string} [options.endpoint] - OTel endpoint
+ * @returns {Object} Telemetry extension object
+ */
+export function buildTelemetryExtension(traceId, options = {}) {
+  const { spansExported = 0, errorsRecorded = 0, endpoint = null } = options
+
+  const extension = {
+    trace_id: traceId,
+    enabled: true,
+  }
+
+  // Add trace URL if we can build one
+  const traceUrl = buildTraceUrl(traceId, endpoint)
+  if (traceUrl) {
+    extension.trace_url = traceUrl
+  }
+
+  // Add metrics if provided
+  if (spansExported > 0 || errorsRecorded > 0) {
+    extension.spans_exported = spansExported
+    extension.errors_recorded = errorsRecorded
+  }
+
+  // Add endpoint info
+  const otelEndpoint = endpoint || process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_ENDPOINT
+  if (otelEndpoint) {
+    extension.collector_endpoint = otelEndpoint
+  }
+
+  return extension
+}

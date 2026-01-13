@@ -33,8 +33,16 @@
     "./scripts/quality-standard-validator": "./src/scripts/quality-standard-validator.mjs",
     "./scripts/generate-ci-result": "./src/scripts/generate-ci-result.mjs",
     "./scripts/ci-result-utils": "./src/scripts/ci-result-utils.mjs",
+    "./scripts/ci-result-history": "./src/scripts/ci-result-history.mjs",
+    "./scripts/ci-result-trends": "./src/scripts/ci-result-trends.mjs",
     "./scripts/pr-quality-comment": "./src/scripts/pr-quality-comment.mjs",
-    "./schemas/ci-result": "./src/schemas/ci-result.v2.schema.json"
+    "./schemas/ci-result": "./src/schemas/ci-result.v2.schema.json",
+    "./telemetry/config": "./src/telemetry/config/index.mjs",
+    "./telemetry/frontend": "./src/telemetry/frontend/index.mjs",
+    "./telemetry/edge": "./src/telemetry/edge/index.mjs",
+    "./telemetry/node": "./src/telemetry/node/index.mjs",
+    "./telemetry/logger": "./src/telemetry/logger/index.mjs",
+    "./telemetry/shared": "./src/telemetry/shared/index.mjs"
   },
   "files": [
     "src",
@@ -52,6 +60,9 @@
     "ci",
     "cd",
     "deployment",
+    "telemetry",
+    "opentelemetry",
+    "observability",
     "kabran"
   ],
   "repository": {
@@ -76,13 +87,61 @@
     "prettier": ">=3.0.0",
     "prettier-plugin-tailwindcss": ">=0.5.0",
     "typescript": ">=5.0.0",
-    "typescript-eslint": ">=8.0.0"
+    "typescript-eslint": ">=8.0.0",
+    "@opentelemetry/api": ">=1.9.0",
+    "@opentelemetry/sdk-trace-web": ">=1.28.0",
+    "@opentelemetry/sdk-trace-node": ">=1.28.0",
+    "@opentelemetry/sdk-trace-base": ">=1.28.0",
+    "@opentelemetry/exporter-trace-otlp-http": ">=0.56.0",
+    "@opentelemetry/resources": ">=1.28.0",
+    "@opentelemetry/semantic-conventions": ">=1.28.0",
+    "@opentelemetry/core": ">=1.28.0",
+    "@opentelemetry/instrumentation": ">=0.56.0",
+    "@opentelemetry/instrumentation-fetch": ">=0.56.0",
+    "@opentelemetry/instrumentation-document-load": ">=0.43.0",
+    "@opentelemetry/instrumentation-user-interaction": ">=0.43.0"
   },
   "peerDependenciesMeta": {
     "eslint-plugin-jsdoc": {
       "optional": true
     },
     "prettier-plugin-tailwindcss": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-web": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-node": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-base": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-trace-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/resources": {
+      "optional": true
+    },
+    "@opentelemetry/semantic-conventions": {
+      "optional": true
+    },
+    "@opentelemetry/core": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation-fetch": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation-document-load": {
+      "optional": true
+    },
+    "@opentelemetry/instrumentation-user-interaction": {
       "optional": true
     }
   },
