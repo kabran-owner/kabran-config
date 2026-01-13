@@ -3,10 +3,14 @@
 # Deploy Runner Integration Tests
 # ==============================================================================
 
+# Load helpers
+load '../helpers/bats-helpers.sh'
+
 setup() {
-  # Set up paths
-  RUNNER_PATH="$(dirname "$BATS_TEST_DIRNAME")/src/scripts/deploy/deploy-runner.sh"
-  FIXTURES_PATH="$(dirname "$BATS_TEST_DIRNAME")/tests/fixtures"
+  # Set up paths (adjusted for tests/shell/ location)
+  PROJECT_ROOT="$(dirname "$(dirname "$BATS_TEST_DIRNAME")")"
+  RUNNER_PATH="$PROJECT_ROOT/src/scripts/deploy/deploy-runner.sh"
+  FIXTURES_PATH="$PROJECT_ROOT/tests/fixtures"
   export DOPPLER_INJECTED=1
 }
 
@@ -46,8 +50,10 @@ setup() {
   run bash "$RUNNER_PATH" up
   assert_success
 
+  # Extract JSON from output (starts at first '{' and goes to end)
+  echo "$output" | sed -n '/^{/,$p' > /tmp/deploy-result.json
+
   # Validate JSON structure
-  echo "$output" | tail -1 > /tmp/deploy-result.json
   run jq -e '.project == "mock-deploy"' /tmp/deploy-result.json
   assert_success
 
@@ -80,32 +86,3 @@ setup() {
   assert_output --partial "Processing stack: frontend"
 }
 
-# ==============================================================================
-# Helper Functions
-# ==============================================================================
-
-assert_success() {
-  if [ "$status" -ne 0 ]; then
-    echo "Expected success but got exit code: $status"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_failure() {
-  if [ "$status" -eq 0 ]; then
-    echo "Expected failure but got success"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_output() {
-  if [ "$1" = "--partial" ]; then
-    if ! echo "$output" | grep -q "$2"; then
-      echo "Expected output to contain: $2"
-      echo "Actual output: $output"
-      return 1
-    fi
-  fi
-}

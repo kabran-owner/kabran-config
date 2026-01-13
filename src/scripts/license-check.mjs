@@ -14,13 +14,13 @@
  *   1 - Prohibited licenses found
  */
 
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
+import {exec} from 'node:child_process';
+import {promisify} from 'node:util';
 
 const execAsync = promisify(exec);
 
 // Prohibited licenses (viral copyleft)
-const PROHIBITED_LICENSES = [
+export const PROHIBITED_LICENSES = [
   'GPL',
   'GPL-1.0',
   'GPL-1.0-only',
@@ -47,7 +47,7 @@ const PROHIBITED_LICENSES = [
 ];
 
 // Warning licenses (require review but don't block)
-const WARNING_LICENSES = [
+export const WARNING_LICENSES = [
   'CC-BY-NC',
   'CC-BY-NC-SA',
   'SSPL',
@@ -70,8 +70,10 @@ async function checkLicenseCheckerAvailable() {
 
 /**
  * Parse license string to check against prohibited list
+ * @param {string|null|undefined} license - License string to check
+ * @returns {boolean}
  */
-function isProhibited(license) {
+export function isProhibited(license) {
   if (!license) return false;
 
   const normalizedLicense = license.toUpperCase();
@@ -86,8 +88,10 @@ function isProhibited(license) {
 
 /**
  * Parse license string to check against warning list
+ * @param {string|null|undefined} license - License string to check
+ * @returns {boolean}
  */
-function isWarning(license) {
+export function isWarning(license) {
   if (!license) return false;
 
   const normalizedLicense = license.toUpperCase();

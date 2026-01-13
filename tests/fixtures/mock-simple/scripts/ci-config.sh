@@ -8,18 +8,20 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PM="npm"
 
 ci_steps() {
+  local FAILED=0
+
   # Simple pipeline for testing
-  if ! run_step "lint" "cd '$PROJECT_ROOT' && echo 'Running lint' && exit 0"; then
+  if ! run_step "lint" "cd '$PROJECT_ROOT' && echo 'Running lint'"; then
     FAILED=1
   fi
   echo ""
 
-  if ! run_step "test" "cd '$PROJECT_ROOT' && echo 'Running tests' && exit 0"; then
+  if ! run_step "test" "cd '$PROJECT_ROOT' && echo 'Running tests'"; then
     FAILED=1
   fi
   echo ""
 
-  if ! run_step "build" "cd '$PROJECT_ROOT' && echo 'Running build' && exit 0"; then
+  if ! run_step "build" "cd '$PROJECT_ROOT' && echo 'Running build'"; then
     FAILED=2
   fi
   echo ""

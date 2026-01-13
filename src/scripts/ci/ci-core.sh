@@ -48,7 +48,9 @@ log_section() {
 }
 
 log_debug() {
-  [ "${CI_LOG_LEVEL:-INFO}" = "DEBUG" ] && echo -e "${GRAY}[DEBUG]${NC} $1"
+  if [ "${CI_LOG_LEVEL:-INFO}" = "DEBUG" ]; then
+    echo -e "${GRAY}[DEBUG]${NC} $1"
+  fi
 }
 
 # ==============================================================================
@@ -249,7 +251,7 @@ generate_ci_json() {
   local ci_passed="$2"
   local exit_code="$3"
   local project="$4"
-  local metadata="${5:-{}}"
+  local metadata="${5:-"{}"}"
 
   log_debug "Generating CI JSON output: $output_file"
 

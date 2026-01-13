@@ -18,15 +18,17 @@
  *   1 - Critical outdated dependencies found (strict mode only)
  */
 
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
+import {exec} from 'node:child_process';
+import {promisify} from 'node:util';
 
 const execAsync = promisify(exec);
 
 /**
  * Parse npm outdated output
+ * @param {string} stdout - Output from npm outdated command
+ * @returns {Array<{name: string, current: string, wanted: string, latest: string, location: string}>}
  */
-function parseOutdatedPackages(stdout) {
+export function parseOutdatedPackages(stdout) {
   if (!stdout.trim()) {
     return [];
   }
@@ -57,8 +59,10 @@ function parseOutdatedPackages(stdout) {
 
 /**
  * Categorize outdated packages by severity
+ * @param {Array<{name: string, current: string, wanted: string, latest: string}>} packages
+ * @returns {{major: Array, minor: Array, patch: Array}}
  */
-function categorizePackages(packages) {
+export function categorizePackages(packages) {
   const major = [];
   const minor = [];
   const patch = [];

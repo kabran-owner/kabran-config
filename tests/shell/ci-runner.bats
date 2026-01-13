@@ -3,10 +3,14 @@
 # CI Runner Integration Tests
 # ==============================================================================
 
+# Load helpers
+load '../helpers/bats-helpers.sh'
+
 setup() {
-  # Set up paths
-  RUNNER_PATH="$(dirname "$BATS_TEST_DIRNAME")/src/scripts/ci/ci-runner.sh"
-  FIXTURES_PATH="$(dirname "$BATS_TEST_DIRNAME")/tests/fixtures"
+  # Set up paths (adjusted for tests/shell/ location)
+  PROJECT_ROOT="$(dirname "$(dirname "$BATS_TEST_DIRNAME")")"
+  RUNNER_PATH="$PROJECT_ROOT/src/scripts/ci/ci-runner.sh"
+  FIXTURES_PATH="$PROJECT_ROOT/tests/fixtures"
 }
 
 # ==============================================================================
@@ -112,37 +116,9 @@ EOF
 
   run bash "$RUNNER_PATH"
   assert_success
-  assert_output --partial "CI Core Version: 1.5.0"
+  # Version is read from package.json (currently 1.0.0)
+  assert_output --partial "CI Core Version: 1.0.0"
 
   rm /tmp/ci-version-result.json
 }
 
-# ==============================================================================
-# Helper Functions
-# ==============================================================================
-
-assert_success() {
-  if [ "$status" -ne 0 ]; then
-    echo "Expected success but got exit code: $status"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_failure() {
-  if [ "$status" -eq 0 ]; then
-    echo "Expected failure but got success"
-    echo "Output: $output"
-    return 1
-  fi
-}
-
-assert_output() {
-  if [ "$1" = "--partial" ]; then
-    if ! echo "$output" | grep -q "$2"; then
-      echo "Expected output to contain: $2"
-      echo "Actual output: $output"
-      return 1
-    fi
-  fi
-}

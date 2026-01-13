@@ -5,26 +5,28 @@
 
 PROJECT_NAME="mock-monorepo"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PM="pnpm"
+PM="npm"
 
 ci_steps() {
+  local FAILED=0
+
   # ===========================================================================
   # PART 1: Frontend CI
   # ===========================================================================
   log_section "PART 1: FRONTEND CI"
   echo ""
 
-  if ! run_step "frontend-lint" "cd '$PROJECT_ROOT' && echo 'Frontend lint' && exit 0"; then
+  if ! run_step "frontend-lint" "cd '$PROJECT_ROOT' && echo 'Frontend lint'"; then
     FAILED=1
   fi
   echo ""
 
-  if ! run_step "frontend-test" "cd '$PROJECT_ROOT' && echo 'Frontend tests' && exit 0"; then
+  if ! run_step "frontend-test" "cd '$PROJECT_ROOT' && echo 'Frontend tests'"; then
     FAILED=1
   fi
   echo ""
 
-  if ! run_step "frontend-build" "cd '$PROJECT_ROOT' && echo 'Frontend build' && exit 0"; then
+  if ! run_step "frontend-build" "cd '$PROJECT_ROOT' && echo 'Frontend build'"; then
     FAILED=2
   fi
   echo ""
@@ -35,17 +37,17 @@ ci_steps() {
   log_section "PART 2: BACKEND CI"
   echo ""
 
-  if ! run_step "backend-lint" "cd '$PROJECT_ROOT' && echo 'Backend lint' && exit 0"; then
+  if ! run_step "backend-lint" "cd '$PROJECT_ROOT' && echo 'Backend lint'"; then
     FAILED=1
   fi
   echo ""
 
-  if ! run_step "backend-test" "cd '$PROJECT_ROOT' && echo 'Backend tests' && exit 0"; then
+  if ! run_step "backend-test" "cd '$PROJECT_ROOT' && echo 'Backend tests'"; then
     FAILED=1
   fi
   echo ""
 
-  if ! run_step "backend-build" "cd '$PROJECT_ROOT' && echo 'Backend build' && exit 0"; then
+  if ! run_step "backend-build" "cd '$PROJECT_ROOT' && echo 'Backend build'"; then
     FAILED=2
   fi
   echo ""
