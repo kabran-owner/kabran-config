@@ -14,6 +14,7 @@ import {
   setupHusky,
   setupConfigs,
   setupQualityStandard,
+  setupTelemetryEnv,
   getCurrentDate,
   getPackageVersion,
   runSetup,
@@ -693,6 +694,89 @@ describe('setup CLI', () => {
 
       expect(results.created).toBe(1);
       expect(existsSync(join(tempDir, 'docs', 'quality', '001-quality-standard.md'))).toBe(false);
+    });
+  });
+
+  describe('setupTelemetryEnv', () => {
+    const templatesDir = getTemplatesDir();
+
+    it('should create .env.example when it does not exist', () => {
+      const results = setupTelemetryEnv(tempDir, templatesDir, {});
+
+      expect(results.created).toBe(1);
+      expect(existsSync(join(tempDir, '.env.example'))).toBe(true);
+
+      const content = readFileSync(join(tempDir, '.env.example'), 'utf-8');
+      expect(content).toContain('Kabran Telemetry Configuration');
+      expect(content).toContain('OTEL_ENABLED');
+      expect(content).toContain('SERVICE_NAME');
+    });
+
+    it('should skip when .env.example exists and has telemetry section', () => {
+      const dest = join(tempDir, '.env.example');
+      writeFileSync(dest, '# Kabran Telemetry Configuration\nOTEL_ENABLED=true', 'utf-8');
+
+      const results = setupTelemetryEnv(tempDir, templatesDir, {});
+
+      expect(results.skipped).toBe(1);
+    });
+
+    it('should append telemetry section when .env.example exists without it', () => {
+      const dest = join(tempDir, '.env.example');
+      writeFileSync(dest, '# Existing config\nDATABASE_URL=postgres://localhost', 'utf-8');
+
+      const results = setupTelemetryEnv(tempDir, templatesDir, {});
+
+      expect(results.overwritten).toBe(1);
+
+      const content = readFileSync(dest, 'utf-8');
+      expect(content).toContain('DATABASE_URL=postgres://localhost');
+      expect(content).toContain('Kabran Telemetry Configuration');
+    });
+
+    it('should overwrite with --force', () => {
+      const dest = join(tempDir, '.env.example');
+      writeFileSync(dest, '# Old content', 'utf-8');
+
+      const results = setupTelemetryEnv(tempDir, templatesDir, {force: true});
+
+      expect(results.overwritten).toBe(1);
+
+      const content = readFileSync(dest, 'utf-8');
+      expect(content).not.toContain('Old content');
+      expect(content).toContain('Kabran Telemetry Configuration');
+    });
+
+    it('should not create file in dry-run mode', () => {
+      const results = setupTelemetryEnv(tempDir, templatesDir, {dryRun: true});
+
+      expect(results.created).toBe(1);
+      expect(existsSync(join(tempDir, '.env.example'))).toBe(false);
+    });
+
+    it('should not modify existing file in dry-run mode when appending', () => {
+      const dest = join(tempDir, '.env.example');
+      const originalContent = '# Existing config\nDATABASE_URL=postgres://localhost';
+      writeFileSync(dest, originalContent, 'utf-8');
+
+      const results = setupTelemetryEnv(tempDir, templatesDir, {dryRun: true});
+
+      expect(results.overwritten).toBe(1);
+
+      const content = readFileSync(dest, 'utf-8');
+      expect(content).toBe(originalContent);
+    });
+  });
+
+  describe('parseArgs with telemetryEnv', () => {
+    it('should parse --telemetry-env flag', () => {
+      const options = parseArgs(['--telemetry-env']);
+      expect(options.telemetryEnv).toBe(true);
+    });
+
+    it('should default telemetryEnv to false', () => {
+      const options = parseArgs([]);
+      expect(options.telemetryEnv).toBe(false);
     });
   });
 });

@@ -79,6 +79,7 @@ export function parseArgs(args) {
     skipQualityStandard: false,
     syncWorkflows: false,
     syncHusky: false,
+    telemetryEnv: false,
     force: false,
     dryRun: false,
     help: false,
@@ -97,6 +98,8 @@ export function parseArgs(args) {
       options.syncWorkflows = true;
     } else if (arg === '--sync-husky') {
       options.syncHusky = true;
+    } else if (arg === '--telemetry-env') {
+      options.telemetryEnv = true;
     } else if (arg === '--force') {
       options.force = true;
     } else if (arg === '--dry-run') {
@@ -132,6 +135,7 @@ ${colors.yellow}OPTIONS:${colors.reset}
   --skip-quality-standard Don't create quality-standard.md
   --sync-workflows        Overwrite existing workflow files
   --sync-husky            Overwrite existing husky hooks
+  --telemetry-env         Generate .env.example with telemetry variables
   --force                 Overwrite all existing files
   --dry-run               Preview changes without modifying files
   --help, -h              Show this help message
@@ -145,6 +149,9 @@ ${colors.yellow}EXAMPLES:${colors.reset}
 
   # Update workflows only
   npx kabran-setup --sync-workflows
+
+  # Generate telemetry .env.example
+  npx kabran-setup --telemetry-env
 
   # Preview changes without modifying
   npx kabran-setup --dry-run
@@ -548,6 +555,79 @@ export function setupQualityStandard(projectDir, templatesDir, options) {
 }
 
 /**
+ * Setup telemetry .env.example
+ * @param {string} projectDir - Project directory
+ * @param {string} templatesDir - Templates directory
+ * @param {object} options - Setup options
+ * @returns {object} Results
+ */
+export function setupTelemetryEnv(projectDir, templatesDir, options) {
+  const {force = false, dryRun = false} = options;
+
+  const results = {
+    created: 0,
+    overwritten: 0,
+    skipped: 0,
+  };
+
+  logInfo('Setting up telemetry .env.example...');
+
+  const src = join(templatesDir, 'telemetry', '.env.telemetry.example');
+  const dest = join(projectDir, '.env.example');
+
+  // Check if source template exists
+  if (!existsSync(src)) {
+    logWarn('Template not found: templates/telemetry/.env.telemetry.example');
+    return results;
+  }
+
+  // Check if destination exists
+  const destExists = existsSync(dest);
+
+  if (destExists && !force) {
+    // If .env.example exists, append telemetry section if not present
+    const existingContent = readFileSync(dest, 'utf-8');
+
+    if (existingContent.includes('Kabran Telemetry Configuration')) {
+      if (dryRun) {
+        logDry('Would skip .env.example (telemetry section already present)');
+      } else {
+        logSkip('.env.example (telemetry section already present)');
+      }
+      results.skipped = 1;
+      return results;
+    }
+
+    // Append telemetry section
+    const telemetryContent = readFileSync(src, 'utf-8');
+
+    if (dryRun) {
+      logDry('Would append telemetry section to .env.example');
+      results.overwritten = 1;
+      return results;
+    }
+
+    const newContent = existingContent.trimEnd() + '\n\n' + telemetryContent;
+    writeFileSync(dest, newContent, 'utf-8');
+    logSuccess('Appended telemetry section to: .env.example');
+    results.overwritten = 1;
+    return results;
+  }
+
+  const status = copyFile(src, dest, {overwrite: force, dryRun});
+
+  if (status === 'created' || status === 'would_create') {
+    results.created = 1;
+  } else if (status === 'overwritten' || status === 'would_overwrite') {
+    results.overwritten = 1;
+  } else {
+    results.skipped = 1;
+  }
+
+  return results;
+}
+
+/**
  * Run setup
  * @param {string} projectDir - Project directory
  * @param {object} options - Setup options
@@ -561,6 +641,7 @@ export function runSetup(projectDir, options) {
     husky: {created: 0, overwritten: 0, skipped: 0},
     configs: {created: 0, overwritten: 0, skipped: 0},
     qualityStandard: {created: 0, overwritten: 0, skipped: 0},
+    telemetryEnv: {created: 0, overwritten: 0, skipped: 0},
   };
 
   console.log('');
@@ -592,8 +673,14 @@ export function runSetup(projectDir, options) {
   }
 
   // Setup quality-standard.md (unless skipped or in sync mode)
-  if (!options.skipQualityStandard && !isSyncMode) {
+  if (!options.skipQualityStandard && !isSyncMode && !options.telemetryEnv) {
     summary.qualityStandard = setupQualityStandard(projectDir, templatesDir, options);
+    console.log('');
+  }
+
+  // Setup telemetry .env.example (only when explicitly requested)
+  if (options.telemetryEnv) {
+    summary.telemetryEnv = setupTelemetryEnv(projectDir, templatesDir, options);
     console.log('');
   }
 
@@ -609,10 +696,10 @@ export function printSummary(summary) {
   console.log(`${colors.cyan}=== Setup Summary ===${colors.reset}`);
 
   const total = {
-    created: summary.workflows.created + summary.husky.created + summary.configs.created + summary.qualityStandard.created,
+    created: summary.workflows.created + summary.husky.created + summary.configs.created + summary.qualityStandard.created + summary.telemetryEnv.created,
     overwritten:
-      summary.workflows.overwritten + summary.husky.overwritten + summary.configs.overwritten + summary.qualityStandard.overwritten,
-    skipped: summary.workflows.skipped + summary.husky.skipped + summary.configs.skipped + summary.qualityStandard.skipped,
+      summary.workflows.overwritten + summary.husky.overwritten + summary.configs.overwritten + summary.qualityStandard.overwritten + summary.telemetryEnv.overwritten,
+    skipped: summary.workflows.skipped + summary.husky.skipped + summary.configs.skipped + summary.qualityStandard.skipped + summary.telemetryEnv.skipped,
   };
 
   if (total.created > 0) {

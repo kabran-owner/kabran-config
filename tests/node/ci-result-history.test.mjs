@@ -267,7 +267,7 @@ describe('ci-result-history', () => {
       const entries = [
         { run_id: 'today', generated_at: now.toISOString() },
         { run_id: 'yesterday', generated_at: new Date(now - 86400000).toISOString() },
-        { run_id: 'week-ago', generated_at: new Date(now - 7 * 86400000).toISOString() },
+        { run_id: '6-days-ago', generated_at: new Date(now - 6 * 86400000).toISOString() },
         { run_id: 'old', generated_at: new Date(now - 30 * 86400000).toISOString() },
       ]
 
@@ -276,7 +276,7 @@ describe('ci-result-history', () => {
       expect(filtered).toHaveLength(3)
       expect(filtered.map(e => e.run_id)).toContain('today')
       expect(filtered.map(e => e.run_id)).toContain('yesterday')
-      expect(filtered.map(e => e.run_id)).toContain('week-ago')
+      expect(filtered.map(e => e.run_id)).toContain('6-days-ago')
     })
 
     it('returns all entries when days is 0 or null', () => {
