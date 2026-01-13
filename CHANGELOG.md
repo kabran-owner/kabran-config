@@ -1,14 +1,3 @@
----
-title: Changelog
-id: 01KEVM0N6F3JRF4VSXFJ7AN9ST
-type: guide
-status: active
-tags: [documentation, guide, react, typescript]
-version: 0.1.0
-created_at: 2026-01-13
-updated_at: 2026-01-13
----
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
