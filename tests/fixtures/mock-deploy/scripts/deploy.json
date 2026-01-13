@@ -1,0 +1,28 @@
+{
+  "project": "mock-deploy",
+  "version": "1.0.0",
+  "stacks": [
+    {
+      "name": "api",
+      "type": "backend",
+      "path": "stacks",
+      "script": "api-deploy.sh",
+      "condition": {
+        "type": "always"
+      }
+    },
+    {
+      "name": "frontend",
+      "type": "frontend",
+      "path": "stacks",
+      "script": "frontend-deploy.sh",
+      "condition": {
+        "type": "always"
+      }
+    }
+  ],
+  "settings": {
+    "timeout_seconds": 300,
+    "skip_unchanged": false
+  }
+}

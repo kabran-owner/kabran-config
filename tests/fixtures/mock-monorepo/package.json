@@ -1,0 +1,13 @@
+{
+  "name": "mock-monorepo",
+  "version": "1.0.0",
+  "description": "Monorepo mock project for testing kabran-config CI/CD",
+  "scripts": {
+    "frontend:lint": "echo 'Frontend linting...'",
+    "frontend:test": "echo 'Frontend testing...'",
+    "frontend:build": "echo 'Frontend building...'",
+    "backend:lint": "echo 'Backend linting...'",
+    "backend:test": "echo 'Backend testing...'",
+    "backend:build": "echo 'Backend building...'"
+  }
+}

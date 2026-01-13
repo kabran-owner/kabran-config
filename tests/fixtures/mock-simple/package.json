@@ -1,0 +1,10 @@
+{
+  "name": "mock-simple",
+  "version": "1.0.0",
+  "description": "Simple mock project for testing kabran-config CI/CD",
+  "scripts": {
+    "lint": "echo 'Linting...'",
+    "test": "echo 'Testing...'",
+    "build": "echo 'Building...'"
+  }
+}
