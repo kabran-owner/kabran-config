@@ -4,6 +4,14 @@
 
 * **ci:** add scope filtering, coverage aggregation, and PR comment support ([2dbad9c](https://github.com/kabran-owner/kabran-config/commit/2dbad9c0edc0622490c22226b8232a87453ff872))
 
+## [1.7.0](https://github.com/kabran-owner/kabran-config/compare/v1.6.0...v1.7.0) (2026-01-13)
+
+
+### Features
+
+* **ci:** migrate from semantic-release to release-please ([#9](https://github.com/kabran-owner/kabran-config/issues/9)) ([a676c4d](https://github.com/kabran-owner/kabran-config/commit/a676c4d79fd2a0ccae4b2765df93121a833a1621))
+* **telemetry:** add unified telemetry package with OTel integration ([#8](https://github.com/kabran-owner/kabran-config/issues/8)) ([80b0f05](https://github.com/kabran-owner/kabran-config/commit/80b0f05241c88530dee23efcc038ec87b07eaf27))
+
 ## [1.5.0](https://github.com/kabran-owner/kabran-config/compare/v1.4.0...v1.5.0) (2026-01-13)
 
 ### Features
