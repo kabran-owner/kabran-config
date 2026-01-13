@@ -11,6 +11,13 @@ updated_at: 2026-01-13
 
 ## [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
 
+
+### Features
+
+* **ci:** add trace_id generation and telemetry improvements ([#11](https://github.com/kabran-owner/kabran-config/issues/11)) ([8101d1c](https://github.com/kabran-owner/kabran-config/commit/8101d1cae62d1a2bb6d7f5718c6543ee9099da06))
+
+## [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
+
 ### Features
 
 * **ci:** add automatic trace_id generation for local CI runs (GAP-001)
