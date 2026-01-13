@@ -1,13 +1,29 @@
-name: Publish
+name: Release & Publish
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  publish:
+  release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: node
 
+  publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -26,9 +42,6 @@ jobs:
 
       - name: Run tests
         run: npm run test:ci
-
-      - name: Update version from tag
-        run: npm version ${{ github.event.release.tag_name }} --no-git-tag-version --allow-same-version
 
       - name: Publish to npm
         run: npm publish --access public
