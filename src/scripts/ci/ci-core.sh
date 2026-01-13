@@ -23,6 +23,11 @@ BLUE='\033[0;34m'
 GRAY='\033[0;90m'
 NC='\033[0m'
 
+# Global arrays for tracking
+declare -a ERRORS=()
+declare -a STEP_RESULTS=()
+CI_START_TIME=""
+
 # ==============================================================================
 # Logging Functions
 # ==============================================================================
@@ -162,26 +167,34 @@ check_dependencies() {
 # Step Execution
 # ==============================================================================
 
-# Run a CI step and capture result
-# Usage: run_step "step_name" "command" [results_file_for_fallback]
+# Run a CI step and capture result with timing
+# Usage: run_step "step_name" "command" [results_file_for_fallback] [component] [category]
 # Returns: 0 on success, 1 on failure
 run_step() {
   local name="$1"
   local cmd="$2"
   local results_file="${3:-}"
+  local component="${4:-}"
+  local category="${5:-custom}"
   local log_file="/tmp/ci_${name}.log"
+
+  # Capture start time (milliseconds since epoch)
+  local start_time
+  start_time=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
 
   log_info "Running: $name"
   log_debug "  Command: $cmd"
+
+  local exit_code=0
+  local status="pass"
 
   if eval "$cmd" > "$log_file" 2>&1; then
     log_success "$name completed"
     if [ "${CI_VERBOSE:-false}" = "true" ]; then
       cat "$log_file"
     fi
-    return 0
   else
-    local exit_code=$?
+    exit_code=$?
     log_warn "$name exited with code: $exit_code"
 
     # Fallback validation (for test OOM scenarios like AGT-507)
@@ -189,27 +202,74 @@ run_step() {
       log_info "Checking test results file for fallback validation..."
       if verify_test_results "$results_file"; then
         log_success "$name passed (via test results validation)"
-        return 0
+        exit_code=0
+        status="pass"
+      else
+        status="fail"
       fi
+    else
+      status="fail"
     fi
 
-    log_error "$name failed"
-    log_info "  Command: $cmd"
-    log_info "  Exit code: $exit_code"
-    log_info "  Log file: $log_file"
+    if [ "$status" = "fail" ]; then
+      log_error "$name failed"
+      log_info "  Command: $cmd"
+      log_info "  Exit code: $exit_code"
+      log_info "  Log file: $log_file"
 
-    # Capture error summary
-    local error_summary
-    error_summary=$(tail -10 "$log_file" | tr '\n' ' ' | sed 's/"/\\"/g')
-    ERRORS+=("$name: $error_summary")
+      # Capture error summary
+      local error_summary
+      error_summary=$(tail -10 "$log_file" | tr '\n' ' ' | sed 's/"/\\"/g')
+      ERRORS+=("$name: $error_summary")
 
-    # Show error output
-    echo "--- Error output (last 30 lines) ---"
-    tail -30 "$log_file"
-    echo "--- End error output ---"
-
-    return 1
+      # Show error output
+      echo "--- Error output (last 30 lines) ---"
+      tail -30 "$log_file"
+      echo "--- End error output ---"
+    fi
   fi
+
+  # Calculate duration
+  local end_time
+  end_time=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+  local duration_ms=$((end_time - start_time))
+
+  # Format human-readable duration
+  local duration_human
+  if [ $duration_ms -lt 1000 ]; then
+    duration_human="${duration_ms}ms"
+  elif [ $duration_ms -lt 60000 ]; then
+    duration_human="$(echo "scale=1; $duration_ms / 1000" | bc 2>/dev/null || echo "$((duration_ms / 1000))")s"
+  else
+    local mins=$((duration_ms / 60000))
+    local secs=$(((duration_ms % 60000) / 1000))
+    duration_human="${mins}m $(printf '%02d' $secs)s"
+  fi
+
+  # Store step result as JSON
+  local step_json
+  step_json=$(jq -n \
+    --arg name "$name" \
+    --arg component "$component" \
+    --arg category "$category" \
+    --arg status "$status" \
+    --argjson exit_code "$exit_code" \
+    --argjson duration_ms "$duration_ms" \
+    --arg duration_human "$duration_human" \
+    '{
+      name: $name,
+      status: $status,
+      exit_code: $exit_code,
+      duration_ms: $duration_ms,
+      duration_human: $duration_human,
+      category: $category
+    } + (if $component != "" then {component: $component} else {} end)'
+  )
+  STEP_RESULTS+=("$step_json")
+
+  log_debug "$name completed in $duration_human"
+
+  [ "$status" = "pass" ] && return 0 || return 1
 }
 
 # ==============================================================================
@@ -238,6 +298,105 @@ verify_test_results() {
     log_error "Test results validation failed: success=$success, numFailedTests=$failed_tests"
     return 1
   fi
+}
+
+# ==============================================================================
+# Timing Functions
+# ==============================================================================
+
+# Start CI timing
+# Usage: ci_start
+ci_start() {
+  CI_START_TIME=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+  export CI_START_TIME
+}
+
+# Get elapsed time since CI started
+# Usage: ci_elapsed_ms
+ci_elapsed_ms() {
+  local now
+  now=$(date +%s%3N 2>/dev/null || echo $(($(date +%s) * 1000)))
+  echo $((now - CI_START_TIME))
+}
+
+# Get step results as JSON array
+# Usage: get_step_results_json
+get_step_results_json() {
+  if [ ${#STEP_RESULTS[@]} -eq 0 ]; then
+    echo "[]"
+    return
+  fi
+
+  local json="["
+  local first=true
+  for step in "${STEP_RESULTS[@]}"; do
+    if [ "$first" = true ]; then
+      first=false
+    else
+      json+=","
+    fi
+    json+="$step"
+  done
+  json+="]"
+  echo "$json"
+}
+
+# Export CI data for Node.js generator
+# Usage: export_ci_data "$OUTPUT_FILE"
+export_ci_data() {
+  local output_file="$1"
+  local project_name="${PROJECT_NAME:-unknown}"
+
+  # Calculate timing
+  local total_ms=0
+  if [ -n "$CI_START_TIME" ]; then
+    total_ms=$(ci_elapsed_ms)
+  fi
+
+  local now
+  now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  local started_at="$now"
+  if [ -n "$CI_START_TIME" ]; then
+    # Convert start time to ISO format
+    started_at=$(date -u -d "@$((CI_START_TIME / 1000))" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "$now")
+  fi
+
+  # Build errors array
+  local errors_json="[]"
+  if [ ${#ERRORS[@]} -gt 0 ]; then
+    errors_json=$(printf '%s\n' "${ERRORS[@]}" | jq -R . | jq -s . 2>/dev/null || echo '[]')
+  fi
+
+  # Get step results
+  local steps_json
+  steps_json=$(get_step_results_json)
+
+  # Create output directory
+  mkdir -p "$(dirname "$output_file")"
+
+  # Generate intermediate data file for Node.js generator
+  jq -n \
+    --argjson steps "$steps_json" \
+    --argjson errors "$errors_json" \
+    --argjson total_ms "$total_ms" \
+    --arg started_at "$started_at" \
+    --arg finished_at "$now" \
+    --arg project_name "$project_name" \
+    '{
+      steps: $steps,
+      errors: $errors,
+      timing: {
+        total_ms: $total_ms,
+        started_at: $started_at,
+        finished_at: $finished_at
+      },
+      project: {
+        name: $project_name
+      }
+    }' > "$output_file"
+
+  log_debug "CI data exported to: $output_file"
 }
 
 # ==============================================================================

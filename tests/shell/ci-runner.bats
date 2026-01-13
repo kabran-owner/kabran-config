@@ -21,20 +21,20 @@ setup() {
   cd "$FIXTURES_PATH/mock-simple"
   export PROJECT_ROOT="$(pwd)"
   export CI_CONFIG_FILE="scripts/ci-config.sh"
-  export CI_OUTPUT_FILE="/tmp/ci-simple-result.json"
+  export CI_OUTPUT_FILE_V2="/tmp/ci-simple-result.json"
 
   run bash "$RUNNER_PATH"
   assert_success
-  assert_output --partial "CI PASSED"
+  assert_output --partial "CI pipeline completed successfully"
 
-  # Verify JSON output was created
+  # Verify JSON output was created (v2 format)
   assert [ -f "/tmp/ci-simple-result.json" ]
 
-  # Verify JSON structure
-  run jq -e '.ci_passed == true' /tmp/ci-simple-result.json
+  # Verify JSON structure (v2 schema)
+  run jq -e '.summary.status == "passing"' /tmp/ci-simple-result.json
   assert_success
 
-  run jq -e '.project == "mock-simple"' /tmp/ci-simple-result.json
+  run jq -e '.project.name == "mock-simple"' /tmp/ci-simple-result.json
   assert_success
 
   rm /tmp/ci-simple-result.json
@@ -44,21 +44,21 @@ setup() {
   cd "$FIXTURES_PATH/mock-monorepo"
   export PROJECT_ROOT="$(pwd)"
   export CI_CONFIG_FILE="scripts/ci-config.sh"
-  export CI_OUTPUT_FILE="/tmp/ci-monorepo-result.json"
+  export CI_OUTPUT_FILE_V2="/tmp/ci-monorepo-result.json"
 
   run bash "$RUNNER_PATH"
   assert_success
-  assert_output --partial "CI PASSED"
+  assert_output --partial "CI pipeline completed successfully"
   assert_output --partial "FRONTEND CI"
   assert_output --partial "BACKEND CI"
 
-  # Verify JSON output
+  # Verify JSON output (v2 format)
   assert [ -f "/tmp/ci-monorepo-result.json" ]
 
-  run jq -e '.ci_passed == true' /tmp/ci-monorepo-result.json
+  run jq -e '.summary.status == "passing"' /tmp/ci-monorepo-result.json
   assert_success
 
-  run jq -e '.project == "mock-monorepo"' /tmp/ci-monorepo-result.json
+  run jq -e '.project.name == "mock-monorepo"' /tmp/ci-monorepo-result.json
   assert_success
 
   rm /tmp/ci-monorepo-result.json
@@ -99,7 +99,7 @@ EOF
   cd "$FIXTURES_PATH/mock-simple"
   export PROJECT_ROOT="$(pwd)"
   export CI_CONFIG_FILE="scripts/ci-config.sh"
-  export CI_OUTPUT_FILE="/tmp/ci-verbose-result.json"
+  export CI_OUTPUT_FILE_V2="/tmp/ci-verbose-result.json"
   export CI_VERBOSE="true"
 
   run bash "$RUNNER_PATH"
@@ -112,7 +112,7 @@ EOF
   cd "$FIXTURES_PATH/mock-simple"
   export PROJECT_ROOT="$(pwd)"
   export CI_CONFIG_FILE="scripts/ci-config.sh"
-  export CI_OUTPUT_FILE="/tmp/ci-version-result.json"
+  export CI_OUTPUT_FILE_V2="/tmp/ci-version-result.json"
 
   run bash "$RUNNER_PATH"
   assert_success

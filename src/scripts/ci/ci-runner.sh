@@ -23,11 +23,14 @@ source "$CORE_SCRIPT"
 # ==============================================================================
 
 OUTPUT_FILE="${CI_OUTPUT_FILE:-.workspace/ci-result.json}"
+OUTPUT_FILE_V2="${CI_OUTPUT_FILE_V2:-docs/quality/ci-result.json}"
 VERBOSE="${CI_VERBOSE:-false}"
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
+USE_V2="${CI_USE_V2:-true}"
 
-# Track errors
-declare -a ERRORS=()
+# Track errors (reinitialize to avoid issues with sourced scripts)
+ERRORS=()
+STEP_RESULTS=()
 FAILED=0
 
 # ==============================================================================
@@ -79,6 +82,9 @@ log_info "Working directory: $PROJECT_ROOT"
 log_info "CI Core Version: $CI_CORE_VERSION"
 echo ""
 
+# Start timing
+ci_start
+
 # Call project-defined pipeline
 if ci_steps; then
   log_success "CI pipeline completed successfully"
@@ -103,6 +109,42 @@ if declare -f ci_metadata >/dev/null; then
   METADATA=$(ci_metadata)
 fi
 
-generate_ci_json "$OUTPUT_FILE" "$CI_PASSED" "$FAILED" "$PROJECT_NAME" "$METADATA"
+# Generate v2 output using Node.js generator
+if [ "$USE_V2" = "true" ]; then
+  log_info "Generating CI result v2..."
+
+  # Export intermediate data
+  INTERMEDIATE_FILE="/tmp/ci-data-$$.json"
+  export_ci_data "$INTERMEDIATE_FILE"
+
+  # Find the generate-ci-result.mjs script
+  GENERATOR_SCRIPT="$RUNNER_DIR/../generate-ci-result.mjs"
+
+  if [ -f "$GENERATOR_SCRIPT" ] && command -v node &>/dev/null; then
+    # Determine output path (support absolute paths)
+    V2_OUTPUT_PATH="$OUTPUT_FILE_V2"
+    if [[ "$OUTPUT_FILE_V2" != /* ]]; then
+      V2_OUTPUT_PATH="$PROJECT_ROOT/$OUTPUT_FILE_V2"
+    fi
+
+    # Use Node.js generator for v2 format
+    node "$GENERATOR_SCRIPT" \
+      --input "$INTERMEDIATE_FILE" \
+      --output "$V2_OUTPUT_PATH" \
+      --project-root "$PROJECT_ROOT" || {
+        log_warn "V2 generator failed, falling back to v1"
+        generate_ci_json "$OUTPUT_FILE" "$CI_PASSED" "$FAILED" "$PROJECT_NAME" "$METADATA"
+      }
+  else
+    log_warn "Node.js generator not available, using v1 format"
+    generate_ci_json "$OUTPUT_FILE" "$CI_PASSED" "$FAILED" "$PROJECT_NAME" "$METADATA"
+  fi
+
+  # Cleanup
+  rm -f "$INTERMEDIATE_FILE"
+else
+  # Use legacy v1 format
+  generate_ci_json "$OUTPUT_FILE" "$CI_PASSED" "$FAILED" "$PROJECT_NAME" "$METADATA"
+fi
 
 exit $FAILED
