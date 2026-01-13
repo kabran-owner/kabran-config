@@ -1,3 +1,14 @@
+## [1.3.0](https://github.com/kabran-owner/kabran-config/compare/v1.2.0...v1.3.0) (2026-01-13)
+
+### Features
+
+* **ci:** add semantic-release for automated publishing ([f68544f](https://github.com/kabran-owner/kabran-config/commit/f68544f482b4a321c9a4318895ee7f3c7bc76813))
+* **quality:** add quality-standard validator and setup integration ([e5d47c8](https://github.com/kabran-owner/kabran-config/commit/e5d47c8a926c1a1fc5f1854ae0198da1ebaa0984))
+
+### Bug Fixes
+
+* **package:** correct bin path format ([9896540](https://github.com/kabran-owner/kabran-config/commit/9896540922888b5785c07071b3e4261cd09518c1))
+
 ---
 title: Changelog
 id: 01KEVM0N6F3JRF4VSXFJ7AN9ST
