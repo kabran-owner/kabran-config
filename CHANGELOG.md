@@ -9,6 +9,13 @@ created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
 
+## [1.11.0](https://github.com/kabran-owner/kabran-config/compare/v1.10.0...v1.11.0) (2026-01-14)
+
+
+### Features
+
+* **config:** add config-loader and refactor validators to use project config ([#17](https://github.com/kabran-owner/kabran-config/issues/17)) ([915a24d](https://github.com/kabran-owner/kabran-config/commit/915a24d580a6ecf142ec2dca20f8a29e2aa628d4))
+
 ## [1.10.0](https://github.com/kabran-owner/kabran-config/compare/v1.9.0...v1.10.0) (2026-01-14)
 
 
