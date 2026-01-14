@@ -235,3 +235,158 @@ setup() {
   rm /tmp/ci-test.json
 }
 
+# ==============================================================================
+# OpenTelemetry Metrics Export Tests
+# ==============================================================================
+
+@test "export_ci_metrics_to_otel skips when OTEL_ENDPOINT not set" {
+  unset OTEL_ENDPOINT
+  run export_ci_metrics_to_otel "/tmp/ci-data.json"
+  assert_success
+}
+
+@test "export_ci_metrics_to_otel fails when data file not found" {
+  export OTEL_ENDPOINT="http://localhost:4318"
+  run export_ci_metrics_to_otel "/tmp/nonexistent-file.json"
+  assert_failure
+  assert_output --partial "CI data file not found"
+  unset OTEL_ENDPOINT
+}
+
+@test "build_otlp_metrics_payload generates valid JSON structure" {
+  local steps_json='[{"name":"lint","status":"pass","duration_ms":1000,"category":"quality"},{"name":"test","status":"pass","duration_ms":2000,"category":"test"}]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "3000" "true" "$steps_json" "$timestamp_ns" "abc123"
+
+  assert_success
+
+  # Validate it's valid JSON
+  echo "$output" | jq -e '.' > /dev/null
+  assert [ $? -eq 0 ]
+
+  # Validate structure
+  local has_resource_metrics
+  has_resource_metrics=$(echo "$output" | jq -e '.resourceMetrics | length > 0' 2>/dev/null)
+  assert [ "$has_resource_metrics" = "true" ]
+
+  # Validate service name
+  local service_name
+  service_name=$(echo "$output" | jq -r '.resourceMetrics[0].resource.attributes[] | select(.key == "service.name") | .value.stringValue' 2>/dev/null)
+  assert [ "$service_name" = "ci-runner" ]
+
+  # Validate project name
+  local project_name
+  project_name=$(echo "$output" | jq -r '.resourceMetrics[0].resource.attributes[] | select(.key == "project.name") | .value.stringValue' 2>/dev/null)
+  assert [ "$project_name" = "test-project" ]
+}
+
+@test "build_otlp_metrics_payload includes trace_id when provided" {
+  local steps_json='[]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "1000" "true" "$steps_json" "$timestamp_ns" "trace123abc"
+
+  assert_success
+
+  # Validate trace_id is included
+  local trace_id
+  trace_id=$(echo "$output" | jq -r '.resourceMetrics[0].resource.attributes[] | select(.key == "trace.id") | .value.stringValue' 2>/dev/null)
+  assert [ "$trace_id" = "trace123abc" ]
+}
+
+@test "build_otlp_metrics_payload excludes trace_id when empty" {
+  local steps_json='[]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "1000" "true" "$steps_json" "$timestamp_ns" ""
+
+  assert_success
+
+  # Validate trace_id is NOT included
+  local trace_attr
+  trace_attr=$(echo "$output" | jq -r '.resourceMetrics[0].resource.attributes[] | select(.key == "trace.id")' 2>/dev/null)
+  assert [ -z "$trace_attr" ]
+}
+
+@test "build_otlp_metrics_payload includes ci.build.duration metric" {
+  local steps_json='[]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "5000" "true" "$steps_json" "$timestamp_ns" ""
+
+  assert_success
+
+  # Validate ci.build.duration metric exists
+  local duration_metric
+  duration_metric=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.build.duration") | .name' 2>/dev/null)
+  assert [ "$duration_metric" = "ci.build.duration" ]
+
+  # Validate duration value
+  local duration_value
+  duration_value=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.build.duration") | .gauge.dataPoints[0].asDouble' 2>/dev/null)
+  assert [ "$duration_value" = "5000" ]
+}
+
+@test "build_otlp_metrics_payload includes ci.build.status metric" {
+  local steps_json='[]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "1000" "false" "$steps_json" "$timestamp_ns" ""
+
+  assert_success
+
+  # Validate ci.build.status metric exists with fail status
+  local status_value
+  status_value=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.build.status") | .sum.dataPoints[0].attributes[] | select(.key == "status") | .value.stringValue' 2>/dev/null)
+  assert [ "$status_value" = "fail" ]
+}
+
+@test "build_otlp_metrics_payload includes ci.step.duration metrics" {
+  local steps_json='[{"name":"lint","status":"pass","duration_ms":1500,"category":"quality"},{"name":"test","status":"fail","duration_ms":3000,"category":"test"}]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "4500" "false" "$steps_json" "$timestamp_ns" ""
+
+  assert_success
+
+  # Validate ci.step.duration metric exists
+  local step_metric
+  step_metric=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.step.duration") | .name' 2>/dev/null)
+  assert [ "$step_metric" = "ci.step.duration" ]
+
+  # Validate step data points count
+  local step_count
+  step_count=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.step.duration") | .gauge.dataPoints | length' 2>/dev/null)
+  assert [ "$step_count" = "2" ]
+}
+
+@test "build_otlp_metrics_payload includes ci.step.count metric" {
+  local steps_json='[{"name":"lint","status":"pass","duration_ms":1000,"category":"quality"},{"name":"test","status":"pass","duration_ms":2000,"category":"test"},{"name":"build","status":"fail","duration_ms":500,"category":"build"},{"name":"deploy","status":"skip","duration_ms":0,"category":"deploy"}]'
+  local timestamp_ns="1704067200000000000"
+
+  run build_otlp_metrics_payload "test-project" "3500" "false" "$steps_json" "$timestamp_ns" ""
+
+  assert_success
+
+  # Validate ci.step.count metric exists
+  local count_metric
+  count_metric=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.step.count") | .name' 2>/dev/null)
+  assert [ "$count_metric" = "ci.step.count" ]
+
+  # Validate pass count
+  local pass_count
+  pass_count=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.step.count") | .sum.dataPoints[] | select(.attributes[] | select(.key == "status" and .value.stringValue == "pass")) | .asInt' 2>/dev/null)
+  assert [ "$pass_count" = "2" ]
+
+  # Validate fail count
+  local fail_count
+  fail_count=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.step.count") | .sum.dataPoints[] | select(.attributes[] | select(.key == "status" and .value.stringValue == "fail")) | .asInt' 2>/dev/null)
+  assert [ "$fail_count" = "1" ]
+
+  # Validate skip count
+  local skip_count
+  skip_count=$(echo "$output" | jq -r '.resourceMetrics[0].scopeMetrics[0].metrics[] | select(.name == "ci.step.count") | .sum.dataPoints[] | select(.attributes[] | select(.key == "status" and .value.stringValue == "skip")) | .asInt' 2>/dev/null)
+  assert [ "$skip_count" = "1" ]
+}
+

@@ -591,6 +591,279 @@ export_ci_data() {
 }
 
 # ==============================================================================
+# OpenTelemetry Metrics Export
+# ==============================================================================
+
+# Export CI metrics to OTel Collector via OTLP HTTP
+# Usage: export_ci_metrics_to_otel "$CI_DATA_FILE"
+# Environment: OTEL_ENDPOINT must be set (e.g., http://localhost:4318)
+# Returns: 0 on success, 1 on failure (but never fails the build due to || true usage)
+export_ci_metrics_to_otel() {
+  local ci_data_file="${1:-}"
+
+  # Check if OTEL_ENDPOINT is configured
+  if [ -z "${OTEL_ENDPOINT:-}" ]; then
+    log_debug "OTEL_ENDPOINT not set, skipping metrics export"
+    return 0
+  fi
+
+  # Validate input file
+  if [ -z "$ci_data_file" ] || [ ! -f "$ci_data_file" ]; then
+    log_warn "CI data file not found: $ci_data_file"
+    return 1
+  fi
+
+  # Check for curl
+  if ! command -v curl &>/dev/null; then
+    log_warn "curl not available, skipping OTel metrics export"
+    return 1
+  fi
+
+  log_info "Exporting CI metrics to OTel Collector..."
+  log_debug "  Endpoint: $OTEL_ENDPOINT"
+  log_debug "  Data file: $ci_data_file"
+
+  # Extract metrics from CI data
+  local total_ms steps_json project_name trace_id ci_passed
+  total_ms=$(jq -r '.timing.total_ms // 0' "$ci_data_file" 2>/dev/null)
+  steps_json=$(jq -c '.steps // []' "$ci_data_file" 2>/dev/null)
+  project_name=$(jq -r '.project.name // "unknown"' "$ci_data_file" 2>/dev/null)
+  trace_id=$(jq -r '.trace_context.trace_id // ""' "$ci_data_file" 2>/dev/null)
+
+  # Determine overall status
+  local failed_count
+  failed_count=$(echo "$steps_json" | jq '[.[] | select(.status == "fail")] | length' 2>/dev/null || echo "0")
+  if [ "$failed_count" -gt 0 ]; then
+    ci_passed="false"
+  else
+    ci_passed="true"
+  fi
+
+  # Get timestamp in nanoseconds (Unix epoch)
+  local timestamp_ns
+  timestamp_ns=$(date +%s)000000000
+
+  # Build OTLP metrics payload
+  local otlp_payload
+  otlp_payload=$(build_otlp_metrics_payload \
+    "$project_name" \
+    "$total_ms" \
+    "$ci_passed" \
+    "$steps_json" \
+    "$timestamp_ns" \
+    "$trace_id")
+
+  if [ -z "$otlp_payload" ] || [ "$otlp_payload" = "null" ]; then
+    log_warn "Failed to build OTLP payload"
+    return 1
+  fi
+
+  # Send to OTel Collector with aggressive timeouts
+  # --connect-timeout 1: max 1 second to establish connection
+  # --max-time 5: max 5 seconds total for the request
+  # -f: fail silently on HTTP errors
+  local otel_metrics_endpoint="${OTEL_ENDPOINT}/v1/metrics"
+
+  log_debug "Sending metrics to: $otel_metrics_endpoint"
+
+  local http_code
+  http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+    --connect-timeout 1 \
+    --max-time 5 \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d "$otlp_payload" \
+    "$otel_metrics_endpoint" 2>/dev/null) || {
+      log_warn "Failed to send metrics to OTel Collector (connection error)"
+      return 1
+    }
+
+  if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+    log_success "CI metrics exported to OTel Collector (HTTP $http_code)"
+    return 0
+  else
+    log_warn "OTel Collector returned HTTP $http_code"
+    return 1
+  fi
+}
+
+# Build OTLP JSON payload for metrics
+# Usage: build_otlp_metrics_payload "$project" "$duration_ms" "$passed" "$steps_json" "$timestamp_ns" "$trace_id"
+build_otlp_metrics_payload() {
+  local project="$1"
+  local duration_ms="$2"
+  local passed="$3"
+  local steps_json="$4"
+  local timestamp_ns="$5"
+  local trace_id="${6:-}"
+
+  # Service attributes
+  local service_name="ci-runner"
+  local service_version="${CI_CORE_VERSION:-unknown}"
+
+  # Count steps by status
+  local pass_count fail_count skip_count
+  pass_count=$(echo "$steps_json" | jq '[.[] | select(.status == "pass")] | length' 2>/dev/null || echo "0")
+  fail_count=$(echo "$steps_json" | jq '[.[] | select(.status == "fail")] | length' 2>/dev/null || echo "0")
+  skip_count=$(echo "$steps_json" | jq '[.[] | select(.status == "skip")] | length' 2>/dev/null || echo "0")
+
+  # Build step duration data points
+  local step_duration_points
+  step_duration_points=$(echo "$steps_json" | jq -c --arg ts "$timestamp_ns" '
+    [.[] | select(.status != "skip") | {
+      attributes: ([
+        {key: "step.name", value: {stringValue: .name}},
+        {key: "step.category", value: {stringValue: (.category // "custom")}},
+        {key: "step.status", value: {stringValue: .status}}
+      ] + (if (.component // "") != "" then [{key: "step.component", value: {stringValue: .component}}] else [] end)),
+      startTimeUnixNano: $ts,
+      timeUnixNano: $ts,
+      asDouble: .duration_ms
+    }]
+  ' 2>/dev/null || echo "[]")
+
+  # Build resource attributes (conditionally include trace_id)
+  local resource_attributes
+  if [ -n "$trace_id" ]; then
+    resource_attributes=$(jq -n \
+      --arg service_name "$service_name" \
+      --arg service_version "$service_version" \
+      --arg project "$project" \
+      --arg trace_id "$trace_id" \
+      '[
+        {key: "service.name", value: {stringValue: $service_name}},
+        {key: "service.version", value: {stringValue: $service_version}},
+        {key: "project.name", value: {stringValue: $project}},
+        {key: "trace.id", value: {stringValue: $trace_id}}
+      ]')
+  else
+    resource_attributes=$(jq -n \
+      --arg service_name "$service_name" \
+      --arg service_version "$service_version" \
+      --arg project "$project" \
+      '[
+        {key: "service.name", value: {stringValue: $service_name}},
+        {key: "service.version", value: {stringValue: $service_version}},
+        {key: "project.name", value: {stringValue: $project}}
+      ]')
+  fi
+
+  # Determine status string
+  local status_str="fail"
+  if [ "$passed" = "true" ]; then
+    status_str="pass"
+  fi
+
+  # Build the full OTLP payload
+  jq -n \
+    --arg service_version "$service_version" \
+    --arg project "$project" \
+    --arg timestamp_ns "$timestamp_ns" \
+    --arg status_str "$status_str" \
+    --argjson duration_ms "$duration_ms" \
+    --argjson pass_count "$pass_count" \
+    --argjson fail_count "$fail_count" \
+    --argjson skip_count "$skip_count" \
+    --argjson step_duration_points "$step_duration_points" \
+    --argjson resource_attributes "$resource_attributes" \
+    '{
+      resourceMetrics: [{
+        resource: {
+          attributes: $resource_attributes
+        },
+        scopeMetrics: [{
+          scope: {
+            name: "kabran-config/ci-runner",
+            version: $service_version
+          },
+          metrics: [
+            {
+              name: "ci.build.duration",
+              description: "Total duration of CI build in milliseconds",
+              unit: "ms",
+              gauge: {
+                dataPoints: [{
+                  attributes: [
+                    {key: "project", value: {stringValue: $project}},
+                    {key: "status", value: {stringValue: $status_str}}
+                  ],
+                  startTimeUnixNano: $timestamp_ns,
+                  timeUnixNano: $timestamp_ns,
+                  asDouble: $duration_ms
+                }]
+              }
+            },
+            {
+              name: "ci.build.status",
+              description: "CI build status counter (1 = occurrence)",
+              unit: "1",
+              sum: {
+                dataPoints: [{
+                  attributes: [
+                    {key: "project", value: {stringValue: $project}},
+                    {key: "status", value: {stringValue: $status_str}}
+                  ],
+                  startTimeUnixNano: $timestamp_ns,
+                  timeUnixNano: $timestamp_ns,
+                  asInt: "1"
+                }],
+                aggregationTemporality: 2,
+                isMonotonic: true
+              }
+            },
+            {
+              name: "ci.step.count",
+              description: "Count of CI steps by status",
+              unit: "1",
+              sum: {
+                dataPoints: [
+                  {
+                    attributes: [
+                      {key: "project", value: {stringValue: $project}},
+                      {key: "status", value: {stringValue: "pass"}}
+                    ],
+                    startTimeUnixNano: $timestamp_ns,
+                    timeUnixNano: $timestamp_ns,
+                    asInt: ($pass_count | tostring)
+                  },
+                  {
+                    attributes: [
+                      {key: "project", value: {stringValue: $project}},
+                      {key: "status", value: {stringValue: "fail"}}
+                    ],
+                    startTimeUnixNano: $timestamp_ns,
+                    timeUnixNano: $timestamp_ns,
+                    asInt: ($fail_count | tostring)
+                  },
+                  {
+                    attributes: [
+                      {key: "project", value: {stringValue: $project}},
+                      {key: "status", value: {stringValue: "skip"}}
+                    ],
+                    startTimeUnixNano: $timestamp_ns,
+                    timeUnixNano: $timestamp_ns,
+                    asInt: ($skip_count | tostring)
+                  }
+                ],
+                aggregationTemporality: 2,
+                isMonotonic: false
+              }
+            },
+            {
+              name: "ci.step.duration",
+              description: "Duration of individual CI steps in milliseconds",
+              unit: "ms",
+              gauge: {
+                dataPoints: $step_duration_points
+              }
+            }
+          ]
+        }]
+      }]
+    }'
+}
+
+# ==============================================================================
 # JSON Output Generation
 # ==============================================================================
 

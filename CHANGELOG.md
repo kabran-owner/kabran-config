@@ -4,20 +4,30 @@ id: 01KEWPJKYF92BGEA9FHQB7BNYN
 type: guide
 status: active
 tags: [documentation, guide]
-version: 0.1.0
+version: 0.1.1
 created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
 
-## [1.9.0](https://github.com/kabran-owner/kabran-config/compare/v1.8.0...v1.9.0) (2026-01-13)
+## [Unreleased]
 
+### Features
+
+* **ci:** export CI metrics to OTel Collector (AGT-1097)
+  * Add `export_ci_metrics_to_otel` function in ci-core.sh
+  * Send metrics to OTel Collector when `OTEL_ENDPOINT` is configured
+  * Metrics exported: `ci.build.duration`, `ci.build.status`, `ci.step.duration`, `ci.step.count`
+  * Fail-safe implementation: telemetry failures never fail the build
+  * Aggressive timeouts: 1s connect, 5s total
+  * Preserves trace_id for correlation with existing telemetry
+
+## [1.9.0](https://github.com/kabran-owner/kabran-config/compare/v1.8.0...v1.9.0) (2026-01-13)
 
 ### Features
 
 * **docs:** add PROP-006 JSDoc traceability tags standard ([#13](https://github.com/kabran-owner/kabran-config/issues/13)) ([0e0e137](https://github.com/kabran-owner/kabran-config/commit/0e0e137ecd526f3fe6f0dfd3f1a68351bcfe49be))
 
 ## [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
-
 
 ### Features
 
