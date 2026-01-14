@@ -1,6 +1,6 @@
 {
   "name": "@kabran-tecnologia/kabran-config",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Shared quality configurations, enforcement scripts, and CI/CD tooling for Kabran projects",
   "author": "Kabran",
   "license": "MIT",

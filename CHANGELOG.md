@@ -9,6 +9,13 @@ created_at: 2026-01-13
 updated_at: 2026-01-14
 ---
 
+## [2.1.0](https://github.com/kabran-owner/kabran-config/compare/v2.0.0...v2.1.0) (2026-01-14)
+
+
+### Features
+
+* **cli:** add smart tool detection and Doppler integration ([#24](https://github.com/kabran-owner/kabran-config/issues/24)) ([068a1e7](https://github.com/kabran-owner/kabran-config/commit/068a1e7e79f1a0cf1d0e2f29a21d5aced1185240))
+
 ## [2.0.0](https://github.com/kabran-owner/kabran-config/compare/v1.12.0...v2.0.0) (2026-01-14)
 
 
