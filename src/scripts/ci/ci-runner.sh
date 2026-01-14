@@ -31,6 +31,7 @@ Environment Variables:
   CI_OUTPUT_FILE      Output file for legacy v1 format
   CI_OUTPUT_FILE_V2   Output file for v2 format (default: docs/quality/ci-result.json)
   CI_CONFIG_FILE      Path to project ci-config.sh
+  OTEL_ENDPOINT       OTel Collector endpoint for metrics export (e.g., http://localhost:4318)
 
 Examples:
   # Run all steps
@@ -230,6 +231,14 @@ if [ "$USE_V2" = "true" ]; then
   else
     log_warn "Node.js generator not available, using v1 format"
     generate_ci_json "$OUTPUT_FILE" "$CI_PASSED" "$FAILED" "$PROJECT_NAME" "$METADATA"
+  fi
+
+  # ==============================================================================
+  # Export Metrics to OTel Collector (if configured)
+  # ==============================================================================
+  # Fail-safe: telemetry failures NEVER fail the build (RN-01)
+  if [ -n "${OTEL_ENDPOINT:-}" ]; then
+    export_ci_metrics_to_otel "$INTERMEDIATE_FILE" || true
   fi
 
   # Cleanup
