@@ -1,10 +1,12 @@
-import {describe, it, expect} from 'vitest';
+import {describe, it, expect, beforeAll, afterAll} from 'vitest';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {loadConfig, findConfigFile, DEFAULTS} from '../../src/core/config-loader.mjs';
+import {mkdirSync, writeFileSync, rmSync} from 'node:fs';
+import {loadConfig, findConfigFile, DEFAULTS, detectToolDefaults, wrapWithDoppler} from '../../src/core/config-loader.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesPath = path.join(__dirname, '../fixtures/mock-config');
+const tempFixturesPath = path.join(__dirname, '../fixtures/temp-tool-detection');
 
 describe('config-loader', () => {
   describe('DEFAULTS', () => {
@@ -51,8 +53,19 @@ describe('config-loader', () => {
 
   describe('loadConfig', () => {
     it('returns defaults when no config file exists', async () => {
-      const config = await loadConfig(path.join(fixturesPath, 'no-config'));
-      expect(config).toEqual(DEFAULTS);
+      const testDir = path.join(fixturesPath, 'no-config');
+      const config = await loadConfig(testDir);
+
+      // Should include static DEFAULTS
+      expect(config.readme).toEqual(DEFAULTS.readme);
+      expect(config.env).toEqual(DEFAULTS.env);
+      expect(config.quality).toEqual(DEFAULTS.quality);
+
+      // Should also include detected tool defaults (empty for no-config fixture)
+      expect(config).toHaveProperty('check');
+      expect(config).toHaveProperty('test');
+      expect(config).toHaveProperty('build');
+      expect(config).toHaveProperty('ci');
     });
 
     it('loads and merges kabran.config.mjs', async () => {
@@ -91,6 +104,131 @@ describe('config-loader', () => {
       expect(config.env.requireExample).toBe(true);
       // env.detectPatterns is in config, should use custom value
       expect(config.env.detectPatterns).toContain('MY_CUSTOM_ENV');
+    });
+  });
+
+  describe('wrapWithDoppler', () => {
+    it('wraps command with doppler run when enabled', () => {
+      const result = wrapWithDoppler('npx vitest run', true);
+      expect(result).toBe('doppler run -- npx vitest run');
+    });
+
+    it('returns command unchanged when disabled', () => {
+      const result = wrapWithDoppler('npx vitest run', false);
+      expect(result).toBe('npx vitest run');
+    });
+  });
+
+  describe('detectToolDefaults', () => {
+    const testDir = path.join(tempFixturesPath, 'with-tools');
+
+    beforeAll(() => {
+      // Create temp directory with tool configs
+      mkdirSync(testDir, {recursive: true});
+    });
+
+    afterAll(() => {
+      // Cleanup
+      rmSync(tempFixturesPath, {recursive: true, force: true});
+    });
+
+    it('returns empty defaults for directory without tool configs', () => {
+      const emptyDir = path.join(tempFixturesPath, 'empty');
+      mkdirSync(emptyDir, {recursive: true});
+
+      const defaults = detectToolDefaults(emptyDir);
+
+      expect(defaults.check).toEqual({});
+      expect(defaults.test).toEqual({});
+      expect(defaults.ci.steps).toEqual([]);
+    });
+
+    it('detects ESLint config', () => {
+      const eslintDir = path.join(tempFixturesPath, 'with-eslint');
+      mkdirSync(eslintDir, {recursive: true});
+      writeFileSync(path.join(eslintDir, 'eslint.config.mjs'), 'export default {}');
+
+      const defaults = detectToolDefaults(eslintDir);
+
+      expect(defaults.check.lint).toBe('npx eslint .');
+      expect(defaults.ci.steps).toContain('check');
+    });
+
+    it('detects TypeScript config', () => {
+      const tsDir = path.join(tempFixturesPath, 'with-typescript');
+      mkdirSync(tsDir, {recursive: true});
+      writeFileSync(path.join(tsDir, 'tsconfig.json'), '{}');
+
+      const defaults = detectToolDefaults(tsDir);
+
+      expect(defaults.check.types).toBe('npx tsc --noEmit');
+    });
+
+    it('detects Prettier config', () => {
+      const prettierDir = path.join(tempFixturesPath, 'with-prettier');
+      mkdirSync(prettierDir, {recursive: true});
+      writeFileSync(path.join(prettierDir, '.prettierrc'), '{}');
+
+      const defaults = detectToolDefaults(prettierDir);
+
+      expect(defaults.check.format).toBe('npx prettier --check .');
+    });
+
+    it('detects Vitest config', () => {
+      const vitestDir = path.join(tempFixturesPath, 'with-vitest');
+      mkdirSync(vitestDir, {recursive: true});
+      writeFileSync(path.join(vitestDir, 'vitest.config.ts'), 'export default {}');
+
+      const defaults = detectToolDefaults(vitestDir);
+
+      expect(defaults.test.unit).toBeDefined();
+      expect(defaults.test.unit.command).toContain('vitest run');
+      expect(defaults.ci.steps).toContain('test:unit');
+    });
+
+    it('detects Playwright config', () => {
+      const playwrightDir = path.join(tempFixturesPath, 'with-playwright');
+      mkdirSync(playwrightDir, {recursive: true});
+      writeFileSync(path.join(playwrightDir, 'playwright.config.ts'), 'export default {}');
+
+      const defaults = detectToolDefaults(playwrightDir);
+
+      expect(defaults.test.e2e).toBeDefined();
+      expect(defaults.test.e2e.command).toContain('playwright test');
+    });
+
+    it('detects build script from package.json', () => {
+      const buildDir = path.join(tempFixturesPath, 'with-build');
+      mkdirSync(buildDir, {recursive: true});
+      writeFileSync(
+        path.join(buildDir, 'package.json'),
+        JSON.stringify({scripts: {build: 'tsc'}})
+      );
+
+      const defaults = detectToolDefaults(buildDir);
+
+      expect(defaults.build.command).toBe('npm run build');
+      expect(defaults.ci.steps).toContain('build');
+    });
+
+    it('detects all tools and builds correct CI steps', () => {
+      const fullDir = path.join(tempFixturesPath, 'full-project');
+      mkdirSync(fullDir, {recursive: true});
+      writeFileSync(path.join(fullDir, 'eslint.config.mjs'), 'export default {}');
+      writeFileSync(path.join(fullDir, 'tsconfig.json'), '{}');
+      writeFileSync(path.join(fullDir, 'vitest.config.ts'), 'export default {}');
+      writeFileSync(
+        path.join(fullDir, 'package.json'),
+        JSON.stringify({scripts: {build: 'tsc'}})
+      );
+
+      const defaults = detectToolDefaults(fullDir);
+
+      expect(defaults.check.lint).toBeDefined();
+      expect(defaults.check.types).toBeDefined();
+      expect(defaults.test.unit).toBeDefined();
+      expect(defaults.build.command).toBeDefined();
+      expect(defaults.ci.steps).toEqual(['check', 'test:unit', 'build']);
     });
   });
 });

@@ -70,7 +70,7 @@ setup() {
 }
 
 @test "check_version_compatibility fails for incompatible version" {
-  export CI_CORE_MIN_VERSION="2.0.0"
+  export CI_CORE_MIN_VERSION="99.0.0"
   run check_version_compatibility
   assert_failure
 }

@@ -81,6 +81,9 @@ export async function runTest(level, config, args) {
 
   console.log('\n' + '='.repeat(50));
   console.log(`Running L${levelNumber(level)} tests: ${level}`);
+  if (testConfig.doppler) {
+    console.log('[Doppler] Secrets injection enabled');
+  }
   console.log('='.repeat(50));
 
   // Setup phase (if defined)
