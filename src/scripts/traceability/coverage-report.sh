@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Kabran Traceability Coverage Report
-# Part of @kabran-owner/kabran-config
+# Part of @kabran-tecnologia/kabran-config
 # Implements PROP-006: JSDoc Traceability Tags
 #
 # Generates a report of spec coverage in the codebase.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Kabran CI Core - Shared Functions
-# Part of @kabran-owner/kabran-config
+# Part of @kabran-tecnologia/kabran-config
 # ==============================================================================
 
 # Version

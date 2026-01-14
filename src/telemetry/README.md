@@ -161,8 +161,8 @@ SERVICE_VERSION=1.0.0                # Service version (default: 1.0.0)
 ENVIRONMENT=production               # Environment name (default: from NODE_ENV)
 OTEL_NAMESPACE=kabran                # Service namespace (default: kabran)
 
-# OTLP Exporter
-OTEL_EXPORTER_OTLP_ENDPOINT=https://otel.kabran.com.br  # Collector endpoint
+# OTLP Exporter (REQUIRED)
+OTEL_EXPORTER_OTLP_ENDPOINT=https://your-otel-collector.example.com  # Your collector endpoint
 OTEL_EXPORTER_OTLP_TIMEOUT=10000     # Export timeout in ms (default: 10000)
 
 # Sampling
@@ -188,7 +188,7 @@ initTelemetry({
   // Optional (all have sensible defaults)
   serviceVersion: '1.0.0',
   environment: 'production',
-  endpoint: 'https://otel.kabran.com.br',
+  endpoint: process.env.OTEL_ENDPOINT, // Required - set via env var
   sampleRate: 0.1,
   enabled: true,
 
@@ -292,20 +292,20 @@ import {
 } from '@kabran-tecnologia/kabran-config/telemetry/shared'
 ```
 
-## Integration with Kosmos Observability
+## Integration with Observability Stack
 
-This package is designed to work with the Kosmos observability stack:
+This package is designed to work with standard observability stacks:
 
-- **Traces** → Grafana Tempo
+- **Traces** → Grafana Tempo, Jaeger, or any OTLP-compatible backend
 - **Logs** → Grafana Loki (via stdout/Promtail or direct export)
-- **Metrics** → Prometheus (planned, see [GAP-006])
+- **Metrics** → Prometheus (planned)
 
-Default endpoint: `https://otel.kabran.com.br`
+**Note:** You must configure `OTEL_ENDPOINT` to point to your OTLP collector.
 
 ### Viewing Traces
 
-1. Open Grafana at your Kosmos instance
-2. Go to Explore → Select Tempo
+1. Open your observability dashboard (e.g., Grafana)
+2. Go to Explore → Select your trace backend (Tempo, Jaeger, etc.)
 3. Search by service name or trace ID
 
 ## Best Practices
@@ -404,4 +404,4 @@ initTelemetry({
 
 - [OpenTelemetry JavaScript](https://opentelemetry.io/docs/languages/js/)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
-- [Kosmos Observability Stack](https://github.com/kabran-owner/kosmos/tree/main/services/observability)
+- [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)

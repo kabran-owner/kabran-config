@@ -51,7 +51,7 @@ export function extractHistoryEntry(result) {
 export function loadHistory(filePath) {
   if (!existsSync(filePath)) {
     return {
-      $schema: 'https://kabran.dev/schemas/ci-result-history.json',
+      $schema: 'ci-result-history.json',
       version: '1.0.0',
       meta: {
         created_at: new Date().toISOString(),
@@ -75,7 +75,7 @@ export function loadHistory(filePath) {
   } catch (error) {
     // If file is corrupted, start fresh
     return {
-      $schema: 'https://kabran.dev/schemas/ci-result-history.json',
+      $schema: 'ci-result-history.json',
       version: '1.0.0',
       meta: {
         created_at: new Date().toISOString(),

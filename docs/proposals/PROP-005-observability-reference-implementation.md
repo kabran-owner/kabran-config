@@ -552,8 +552,8 @@ export default defineTelemetryConfig({
 ## References
 
 - [CIE Telemetry Implementation](../../../projects/cie/)
-- [Nexus std-ops-003](../../../nexus/standards/lifecycle-operations/std-ops-003-observability-frontend.md)
-- [Nexus std-ops-004](../../../nexus/standards/lifecycle-operations/std-ops-004-observability-edge.md)
+- [Nexus std-ops-003](../../../nexus/archives/standards/lifecycle-operations/std-ops-003-observability-frontend.md)
+- [Nexus std-ops-004](../../../nexus/archives/standards/lifecycle-operations/std-ops-004-observability-edge.md)
 - [OpenTelemetry JS](https://opentelemetry.io/docs/instrumentation/js/)
 - [PROP-003: Quality Status](./PROP-003-quality-status-automation.md)
 - [PROP-004: CI Observability](./PROP-004-ci-observability-metrics.md)

@@ -249,7 +249,7 @@ describe('ci-result-utils', () => {
     it('creates valid minimal result', () => {
       const result = createMinimalResult({ projectName: 'test-project', passed: true })
 
-      expect(result.$schema).toBe('https://kabran.dev/schemas/ci-result.v2.json')
+      expect(result.$schema).toBe('ci-result.v2.json')
       expect(result.version).toBe('1.0.0')
       expect(result.project.name).toBe('test-project')
       expect(result.summary.status).toBe('passing')

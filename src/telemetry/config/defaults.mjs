@@ -76,9 +76,10 @@ function parseIgnorePaths(value) {
 
 /**
  * Default OTLP endpoint
- * Override: OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_ENDPOINT
+ * REQUIRED: Set via OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_ENDPOINT
+ * No default is provided - users must configure their own collector endpoint
  */
-export const DEFAULT_ENDPOINT = 'https://otel.kabran.com.br'
+export const DEFAULT_ENDPOINT = null
 
 /**
  * Default OTLP traces path
@@ -107,12 +108,9 @@ export const DEFAULT_NAMESPACE = 'kabran'
 /**
  * Default CORS URLs for trace header propagation
  * Override: OTEL_PROPAGATE_TRACE_HEADER_CORS_URLS (comma-separated regex patterns)
+ * Only localhost is included by default - configure additional domains via env var
  */
-export const DEFAULT_CORS_URLS = [
-  /.*\.supabase\.co/,
-  /.*\.kabran\.com\.br/,
-  /localhost/,
-]
+export const DEFAULT_CORS_URLS = [/localhost/]
 
 /**
  * Default instrumentation options

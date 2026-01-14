@@ -436,7 +436,7 @@ export function createMinimalResult({ projectName, passed = true }) {
   const now = new Date().toISOString()
 
   return {
-    $schema: 'https://kabran.dev/schemas/ci-result.v2.json',
+    $schema: 'ci-result.v2.json',
     version: '1.0.0',
     meta: {
       generated_at: now,

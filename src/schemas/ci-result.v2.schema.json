@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://kabran.dev/schemas/ci-result.v2.json",
+  "$id": "ci-result.v2.json",
   "title": "CI Result Schema v2",
   "description": "Unified schema for CI/CD results with quality metrics, timing, and observability data",
   "type": "object",
