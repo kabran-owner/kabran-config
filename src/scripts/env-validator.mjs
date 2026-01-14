@@ -18,8 +18,12 @@ import {exec} from 'node:child_process';
 import {promisify} from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
+import {loadConfig, DEFAULTS} from '../core/config-loader.mjs';
 
 const execAsync = promisify(exec);
+
+// Default patterns for backwards compatibility
+export const DEFAULT_DETECT_PATTERNS = DEFAULTS.env.detectPatterns;
 
 /**
  * Check if .env file is tracked in git (CRITICAL SECURITY ISSUE)
@@ -40,17 +44,10 @@ export async function checkEnvInGit(cwd = process.cwd()) {
 /**
  * Detect if project uses environment variables
  * @param {string} [cwd] - Directory to check (defaults to process.cwd())
+ * @param {string[]} [patterns] - Patterns to search for (defaults to config patterns)
  * @returns {Promise<{usesEnv: boolean, files: string[]}>}
  */
-export async function detectEnvUsage(cwd = process.cwd()) {
-  const patterns = [
-    'process.env',      // Node.js
-    'os.getenv',        // Python
-    'import.meta.env',  // Vite/ESM
-    'Deno.env',         // Deno
-    '$_ENV',            // PHP
-  ];
-
+export async function detectEnvUsage(cwd = process.cwd(), patterns = DEFAULT_DETECT_PATTERNS) {
   const extensions = ['js', 'ts', 'jsx', 'tsx', 'mjs', 'cjs', 'py', 'php'];
   const extensionPattern = extensions.join(',');
 
@@ -157,6 +154,9 @@ export async function validateEnv(cwd = process.cwd(), silent = false) {
   const errors = [];
   const warnings = [];
 
+  // Load project config
+  const config = await loadConfig(cwd);
+
   // CRITICAL: Check if .env is committed to git
   log('Checking for .env in git...');
   const envInGit = await checkEnvInGit(cwd);
@@ -171,7 +171,7 @@ export async function validateEnv(cwd = process.cwd(), silent = false) {
 
   // Detect if project uses environment variables
   log('Detecting environment variable usage...');
-  const {usesEnv, files} = await detectEnvUsage(cwd);
+  const {usesEnv, files} = await detectEnvUsage(cwd, config.env.detectPatterns);
 
   if (!usesEnv) {
     log('  No environment variable usage detected');
@@ -236,9 +236,10 @@ export async function validateEnv(cwd = process.cwd(), silent = false) {
  * @returns {Promise<Object>} Check result for ci-result.json
  */
 export async function getEnvCheckResult(cwd = process.cwd()) {
+  const config = await loadConfig(cwd);
   const envInGit = await checkEnvInGit(cwd);
   const envExample = checkEnvExampleExists(cwd);
-  const {usesEnv} = await detectEnvUsage(cwd);
+  const {usesEnv} = await detectEnvUsage(cwd, config.env.detectPatterns);
 
   let undocumented = [];
   if (envExample.exists) {

@@ -270,42 +270,42 @@ Este projeto segue 100% dos padroes.
   });
 
   describe('validate', () => {
-    it('should pass for valid project', () => {
-      const result = validate(validFixture, true);
+    it('should pass for valid project', async () => {
+      const result = await validate(validFixture, true);
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should fail when file is missing', () => {
-      const result = validate(missingFileFixture, true);
+    it('should fail when file is missing', async () => {
+      const result = await validate(missingFileFixture, true);
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain('Missing required file');
     });
 
-    it('should fail when required sections are missing', () => {
-      const result = validate(missingSectionsFixture, true);
+    it('should fail when required sections are missing', async () => {
+      const result = await validate(missingSectionsFixture, true);
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors.some(e => e.includes('Missing required section'))).toBe(true);
     });
 
-    it('should warn for undocumented overrides but still be valid', () => {
-      const result = validate(undocumentedOverrideFixture, true);
+    it('should warn for undocumented overrides but still be valid', async () => {
+      const result = await validate(undocumentedOverrideFixture, true);
       expect(result.valid).toBe(true);
       expect(result.warnings.length).toBeGreaterThan(0);
       expect(result.warnings.some(w => w.includes('Undocumented override'))).toBe(true);
     });
 
-    it('should warn for documented but missing overrides', () => {
-      const result = validate(documentedButMissingFixture, true);
+    it('should warn for documented but missing overrides', async () => {
+      const result = await validate(documentedButMissingFixture, true);
       expect(result.valid).toBe(true);
       expect(result.warnings.length).toBeGreaterThan(0);
       expect(result.warnings.some(w => w.includes('Documented override not found'))).toBe(true);
     });
 
-    it('should return proper structure', () => {
-      const result = validate(validFixture, true);
+    it('should return proper structure', async () => {
+      const result = await validate(validFixture, true);
       expect(result).toHaveProperty('valid');
       expect(result).toHaveProperty('errors');
       expect(result).toHaveProperty('warnings');
@@ -315,39 +315,39 @@ Este projeto segue 100% dos padroes.
   });
 
   describe('getQualityStandardCheckResult', () => {
-    it('returns pass status for valid project', () => {
-      const result = getQualityStandardCheckResult(validFixture);
+    it('returns pass status for valid project', async () => {
+      const result = await getQualityStandardCheckResult(validFixture);
       expect(result.status).toBe('pass');
       expect(result.file_exists).toBe(true);
       expect(result.undocumented_overrides).toHaveLength(0);
     });
 
-    it('returns fail status when file is missing', () => {
-      const result = getQualityStandardCheckResult(missingFileFixture);
+    it('returns fail status when file is missing', async () => {
+      const result = await getQualityStandardCheckResult(missingFileFixture);
       expect(result.status).toBe('fail');
       expect(result.file_exists).toBe(false);
     });
 
-    it('returns fail status for missing sections', () => {
-      const result = getQualityStandardCheckResult(missingSectionsFixture);
+    it('returns fail status for missing sections', async () => {
+      const result = await getQualityStandardCheckResult(missingSectionsFixture);
       expect(result.status).toBe('fail');
       expect(result.missing_sections).toBeDefined();
     });
 
-    it('returns warn status for undocumented overrides', () => {
-      const result = getQualityStandardCheckResult(undocumentedOverrideFixture);
+    it('returns warn status for undocumented overrides', async () => {
+      const result = await getQualityStandardCheckResult(undocumentedOverrideFixture);
       expect(result.status).toBe('warn');
       expect(result.undocumented_overrides.length).toBeGreaterThan(0);
     });
 
-    it('returns warn status for orphaned overrides', () => {
-      const result = getQualityStandardCheckResult(documentedButMissingFixture);
+    it('returns warn status for orphaned overrides', async () => {
+      const result = await getQualityStandardCheckResult(documentedButMissingFixture);
       expect(result.status).toBe('warn');
       expect(result.orphaned_overrides.length).toBeGreaterThan(0);
     });
 
-    it('has correct structure for ci-result.json', () => {
-      const result = getQualityStandardCheckResult(validFixture);
+    it('has correct structure for ci-result.json', async () => {
+      const result = await getQualityStandardCheckResult(validFixture);
       expect(result).toHaveProperty('status');
       expect(result).toHaveProperty('file_exists');
       expect(result).toHaveProperty('undocumented_overrides');

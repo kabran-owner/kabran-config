@@ -16,21 +16,27 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import {loadConfig, DEFAULTS} from '../core/config-loader.mjs';
 
-// Required sections (blocking if missing)
+/**
+ * Build section patterns from config array.
+ * @param {string[]} sections - Section names
+ * @returns {Array<{pattern: RegExp, name: string}>}
+ */
+function buildSectionPatterns(sections) {
+  return sections.map(name => ({
+    pattern: new RegExp(`^##\\s+${name}`, 'mi'),
+    name,
+  }));
+}
+
+// Default sections for backwards compatibility (used when importing directly)
 export const REQUIRED_SECTIONS = [
   {pattern: /^#\s+.+/m, name: 'Project Title (# Heading)'},
-  {pattern: /^##\s+Installation/mi, name: 'Installation'},
-  {pattern: /^##\s+Usage/mi, name: 'Usage'},
-  {pattern: /^##\s+License/mi, name: 'License'},
+  ...buildSectionPatterns(DEFAULTS.readme.required),
 ];
 
-// Recommended sections (warnings only)
-export const RECOMMENDED_SECTIONS = [
-  {pattern: /^##\s+Development/mi, name: 'Development'},
-  {pattern: /^##\s+Contributing/mi, name: 'Contributing'},
-  {pattern: /^##\s+Testing/mi, name: 'Testing'},
-];
+export const RECOMMENDED_SECTIONS = buildSectionPatterns(DEFAULTS.readme.recommended);
 
 /**
  * Find README.md in directory
@@ -64,9 +70,9 @@ export function checkSection(content, section) {
  * Main validation function
  * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
  * @param {boolean} [silent] - Suppress console output
- * @returns {{valid: boolean, errors: string[], warnings: string[]}}
+ * @returns {Promise<{valid: boolean, errors: string[], warnings: string[]}>}
  */
-export function validateReadme(cwd = process.cwd(), silent = false) {
+export async function validateReadme(cwd = process.cwd(), silent = false) {
   const log = silent ? () => {} : console.log.bind(console);
   const error = silent ? () => {} : console.error.bind(console);
 
@@ -74,6 +80,16 @@ export function validateReadme(cwd = process.cwd(), silent = false) {
 
   const errors = [];
   const warnings = [];
+
+  // Load project config
+  const config = await loadConfig(cwd);
+
+  // Build section patterns from config
+  const requiredSections = [
+    {pattern: /^#\s+.+/m, name: 'Project Title (# Heading)'},
+    ...buildSectionPatterns(config.readme.required),
+  ];
+  const recommendedSections = buildSectionPatterns(config.readme.recommended);
 
   // Check if README exists
   const readme = findReadme(cwd);
@@ -90,7 +106,7 @@ export function validateReadme(cwd = process.cwd(), silent = false) {
 
   // Check required sections
   log('Checking required sections:');
-  for (const section of REQUIRED_SECTIONS) {
+  for (const section of requiredSections) {
     const exists = checkSection(content, section);
     if (exists) {
       log(`  OK ${section.name}`);
@@ -102,7 +118,7 @@ export function validateReadme(cwd = process.cwd(), silent = false) {
 
   // Check recommended sections
   log('\nChecking recommended sections:');
-  for (const section of RECOMMENDED_SECTIONS) {
+  for (const section of recommendedSections) {
     const exists = checkSection(content, section);
     if (exists) {
       log(`  OK ${section.name}`);
@@ -134,10 +150,10 @@ export function validateReadme(cwd = process.cwd(), silent = false) {
 /**
  * Get README validation result in ci-result.json format
  * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
- * @returns {Object} Check result for ci-result.json
+ * @returns {Promise<Object>} Check result for ci-result.json
  */
-export function getReadmeCheckResult(cwd = process.cwd()) {
-  const result = validateReadme(cwd, true);
+export async function getReadmeCheckResult(cwd = process.cwd()) {
+  const result = await validateReadme(cwd, true);
 
   // Determine status
   let status = 'pass';
@@ -169,11 +185,11 @@ if (isMainModule) {
     const cwd = args.find(a => !a.startsWith('--')) || process.cwd();
 
     if (jsonOutput) {
-      const result = getReadmeCheckResult(cwd);
+      const result = await getReadmeCheckResult(cwd);
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.status === 'fail' ? 1 : 0);
     } else {
-      const result = validateReadme(cwd);
+      const result = await validateReadme(cwd);
       process.exit(result.valid ? 0 : 1);
     }
   } catch (err) {

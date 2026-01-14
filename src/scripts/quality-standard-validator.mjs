@@ -16,6 +16,10 @@
 
 import {existsSync, readFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {loadConfig, DEFAULTS} from '../core/config-loader.mjs';
+
+// Default path for backwards compatibility
+export const DEFAULT_STANDARD_PATH = DEFAULTS.quality.standardPath;
 
 /**
  * Required sections that must be present in quality-standard.md
@@ -33,10 +37,11 @@ export const REQUIRED_FRONTMATTER = ['title', 'type', 'status'];
 /**
  * Find quality-standard.md file in the project
  * @param {string} cwd - Current working directory
+ * @param {string} [standardPath] - Path to quality standard file (relative to cwd)
  * @returns {{exists: boolean, path?: string} | null} File info or null
  */
-export function findQualityStandard(cwd = process.cwd()) {
-  const expectedPath = join(cwd, 'docs', 'quality', '001-quality-standard.md');
+export function findQualityStandard(cwd = process.cwd(), standardPath = DEFAULT_STANDARD_PATH) {
+  const expectedPath = join(cwd, standardPath);
 
   if (existsSync(expectedPath)) {
     return {
@@ -183,26 +188,30 @@ export function compareOverrides(documented, code) {
  * Validate quality-standard.md
  * @param {string} cwd - Current working directory
  * @param {boolean} silent - Suppress console output (for testing)
- * @returns {{valid: boolean, errors: string[], warnings: string[]}} Validation result
+ * @returns {Promise<{valid: boolean, errors: string[], warnings: string[]}>} Validation result
  */
-export function validate(cwd = process.cwd(), silent = false) {
+export async function validate(cwd = process.cwd(), silent = false) {
   const log = silent ? () => {} : console.log.bind(console);
   const error = silent ? () => {} : console.error.bind(console);
 
   const errors = [];
   const warnings = [];
 
+  // Load project config
+  const config = await loadConfig(cwd);
+  const standardPath = config.quality.standardPath;
+
   log('');
   log('Validating Quality Standard...');
   log('='.repeat(50));
 
   // 1. Check file exists
-  const fileInfo = findQualityStandard(cwd);
+  const fileInfo = findQualityStandard(cwd, standardPath);
 
   if (!fileInfo) {
-    errors.push('Missing required file: docs/quality/001-quality-standard.md');
+    errors.push(`Missing required file: ${standardPath}`);
     error('');
-    error('ERROR: Missing required file: docs/quality/001-quality-standard.md');
+    error(`ERROR: Missing required file: ${standardPath}`);
     error('');
     error('Run "npx kabran-setup" to create it, or create manually.');
     log('='.repeat(50));
@@ -210,7 +219,7 @@ export function validate(cwd = process.cwd(), silent = false) {
   }
 
   log('');
-  log('File: docs/quality/001-quality-standard.md');
+  log(`File: ${standardPath}`);
   log('  Status: Found');
 
   // 2. Read and parse content
@@ -317,10 +326,12 @@ export function validate(cwd = process.cwd(), silent = false) {
 /**
  * Get quality standard validation result in ci-result.json format
  * @param {string} [cwd] - Directory to validate (defaults to process.cwd())
- * @returns {Object} Check result for ci-result.json
+ * @returns {Promise<Object>} Check result for ci-result.json
  */
-export function getQualityStandardCheckResult(cwd = process.cwd()) {
-  const fileInfo = findQualityStandard(cwd);
+export async function getQualityStandardCheckResult(cwd = process.cwd()) {
+  const config = await loadConfig(cwd);
+  const standardPath = config.quality.standardPath;
+  const fileInfo = findQualityStandard(cwd, standardPath);
 
   if (!fileInfo) {
     return {
@@ -372,11 +383,11 @@ if (isMainModule) {
     const cwd = args.find(a => !a.startsWith('--')) || process.cwd();
 
     if (jsonOutput) {
-      const result = getQualityStandardCheckResult(cwd);
+      const result = await getQualityStandardCheckResult(cwd);
       console.log(JSON.stringify(result, null, 2));
       process.exit(result.status === 'fail' ? 1 : 0);
     } else {
-      const result = validate(cwd);
+      const result = await validate(cwd);
       process.exit(result.valid ? 0 : 1);
     }
   } catch (err) {

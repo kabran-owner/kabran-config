@@ -16,6 +16,7 @@
     "kabran-coverage": "src/scripts/traceability/coverage-report.sh"
   },
   "exports": {
+    "./core/config-loader": "./src/core/config-loader.mjs",
     "./eslint": "./src/eslint.mjs",
     "./eslint/node": "./src/eslint-node.mjs",
     "./eslint/react": "./src/eslint-react.mjs",
