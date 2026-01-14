@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Bug Fixes
+
+* **cli:** improve Doppler auto-detection to support DOPPLER_TOKEN env var and doppler.yaml ([AGT-1116](https://linear.app/kabran/issue/AGT-1116))
+
 ## [2.1.0](https://github.com/kabran-owner/kabran-config/compare/v2.0.0...v2.1.0) (2026-01-14)
 
 ### Features

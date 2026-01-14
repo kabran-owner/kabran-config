@@ -119,6 +119,73 @@ describe('config-loader', () => {
     });
   });
 
+  describe('Doppler detection', () => {
+    const dopplerDir = path.join(tempFixturesPath, 'doppler-detection');
+
+    beforeAll(() => {
+      mkdirSync(dopplerDir, {recursive: true});
+    });
+
+    afterAll(() => {
+      // Restore env
+      delete process.env.DOPPLER_TOKEN;
+    });
+
+    it('detects Doppler via DOPPLER_TOKEN env var', () => {
+      const testDir = path.join(dopplerDir, 'env-token');
+      mkdirSync(testDir, {recursive: true});
+      writeFileSync(path.join(testDir, 'vitest.config.ts'), 'export default {}');
+
+      // Set env var
+      process.env.DOPPLER_TOKEN = 'dp.st.test_token_123';
+
+      const defaults = detectToolDefaults(testDir);
+
+      expect(defaults.test.unit.doppler).toBe(true);
+      expect(defaults.test.unit.command).toContain('doppler run --');
+
+      // Cleanup
+      delete process.env.DOPPLER_TOKEN;
+    });
+
+    it('detects Doppler via doppler.yaml file', () => {
+      const testDir = path.join(dopplerDir, 'yaml-config');
+      mkdirSync(testDir, {recursive: true});
+      writeFileSync(path.join(testDir, 'vitest.config.ts'), 'export default {}');
+      writeFileSync(
+        path.join(testDir, 'doppler.yaml'),
+        'setup:\n  project: test-project\n  config: dev'
+      );
+
+      const defaults = detectToolDefaults(testDir);
+
+      expect(defaults.test.unit.doppler).toBe(true);
+      expect(defaults.test.unit.command).toContain('doppler run --');
+    });
+
+    it('wraps with Doppler only when configured (no env var or yaml)', () => {
+      const testDir = path.join(dopplerDir, 'no-env-or-yaml');
+      mkdirSync(testDir, {recursive: true});
+      writeFileSync(path.join(testDir, 'vitest.config.ts'), 'export default {}');
+
+      // Ensure no env var
+      delete process.env.DOPPLER_TOKEN;
+
+      const defaults = detectToolDefaults(testDir);
+
+      // The test verifies consistent behavior:
+      // - If doppler flag is true, command MUST be wrapped
+      // - If doppler flag is false, command MUST NOT be wrapped
+      if (defaults.test.unit.doppler) {
+        // Doppler was detected via CLI config or secrets command (machine has Doppler setup)
+        expect(defaults.test.unit.command).toContain('doppler run --');
+      } else {
+        // No Doppler detected
+        expect(defaults.test.unit.command).toBe('npx vitest run');
+      }
+    });
+  });
+
   describe('detectToolDefaults', () => {
     const testDir = path.join(tempFixturesPath, 'with-tools');
 
