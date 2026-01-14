@@ -91,7 +91,7 @@ describe('ci-result-history', () => {
 
     it('loads existing history from file', () => {
       const existingHistory = {
-        $schema: 'https://kabran.dev/schemas/ci-result-history.json',
+        $schema: 'ci-result-history.json',
         version: '1.0.0',
         meta: { updated_at: '2026-01-12T10:00:00Z' },
         entries: [

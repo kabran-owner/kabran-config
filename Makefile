@@ -78,7 +78,7 @@ _publish: ## Internal: publish workflow
 	echo "$(CYAN)→ Publishing to GitHub Packages...$(RESET)"; \
 	NPM_TOKEN=$(NPM_TOKEN) npm publish; \
 	if [ $$? -eq 0 ]; then \
-		echo "$(GREEN)✓ Published @kabran-owner/kabran-config@$$NEW_VERSION$(RESET)"; \
+		echo "$(GREEN)✓ Published @kabran-tecnologia/kabran-config@$$NEW_VERSION$(RESET)"; \
 		echo ""; \
 		echo "$(CYAN)→ Pushing to remote...$(RESET)"; \
 		git push; \
@@ -93,13 +93,13 @@ _publish: ## Internal: publish workflow
 
 verify: ## Verify published version on registry
 	@echo "$(CYAN)→ Verifying published version...$(RESET)"
-	@PUBLISHED_VERSION=$$(npm view @kabran-owner/kabran-config version 2>/dev/null); \
+	@PUBLISHED_VERSION=$$(npm view @kabran-tecnologia/kabran-config version 2>/dev/null); \
 	LOCAL_VERSION=$$(node -p "require('./package.json').version"); \
 	if [ "$$PUBLISHED_VERSION" = "$$LOCAL_VERSION" ]; then \
 		echo "$(GREEN)✓ Version $$LOCAL_VERSION is published and available$(RESET)"; \
 		echo ""; \
 		echo "$(CYAN)All published versions:$(RESET)"; \
-		npm view @kabran-owner/kabran-config versions; \
+		npm view @kabran-tecnologia/kabran-config versions; \
 	else \
 		echo "$(RED)✗ Version mismatch:$(RESET)"; \
 		echo "  Local:     $$LOCAL_VERSION"; \
