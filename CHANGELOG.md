@@ -1,23 +1,12 @@
----
-title: [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
-id: 01KEWPJKYF92BGEA9FHQB7BNYN
-type: guide
-status: active
-tags: [documentation, guide]
-version: 0.1.2
-created_at: 2026-01-13
-updated_at: 2026-01-14
----
+# Changelog
 
 ## [2.1.0](https://github.com/kabran-owner/kabran-config/compare/v2.0.0...v2.1.0) (2026-01-14)
-
 
 ### Features
 
 * **cli:** add smart tool detection and Doppler integration ([#24](https://github.com/kabran-owner/kabran-config/issues/24)) ([068a1e7](https://github.com/kabran-owner/kabran-config/commit/068a1e7e79f1a0cf1d0e2f29a21d5aced1185240))
 
 ## [2.0.0](https://github.com/kabran-owner/kabran-config/compare/v1.12.0...v2.0.0) (2026-01-14)
-
 
 ### ⚠ BREAKING CHANGES
 
@@ -28,7 +17,6 @@ updated_at: 2026-01-14
 * **security:** remove hardcoded internal URLs from public repository ([#22](https://github.com/kabran-owner/kabran-config/issues/22)) ([8cf4aaa](https://github.com/kabran-owner/kabran-config/commit/8cf4aaa089b003508fb89a952c73ae42daf2cf5d))
 
 ## [1.12.0](https://github.com/kabran-owner/kabran-config/compare/v1.11.0...v1.12.0) (2026-01-14)
-
 
 ### Features
 
@@ -46,63 +34,6 @@ updated_at: 2026-01-14
 
 * **ci:** export CI metrics to OTel Collector (AGT-1097) ([#15](https://github.com/kabran-owner/kabran-config/issues/15)) ([86527e9](https://github.com/kabran-owner/kabran-config/commit/86527e9e81625c8889e903653d0515384a5a4e40))
 
-## [Unreleased]
-
-### ⚠️ BREAKING CHANGES
-
-* **telemetry:** remove hardcoded internal URLs for public repository security
-  * `DEFAULT_ENDPOINT` is now `null` - users **MUST** set `OTEL_ENDPOINT` env var
-  * `DEFAULT_CORS_URLS` now only contains `/localhost/` pattern
-  * Users must configure their own CORS URLs in telemetry config
-  * Schema `$id` changed from absolute URLs to local references (`ci-result.v2.json`)
-
-### Migration Guide
-
-**Telemetry Configuration:**
-
-```javascript
-// Before: endpoint was auto-configured
-// After: explicit configuration required
-
-// Option 1: Environment variable
-OTEL_ENDPOINT=https://your-otel-collector.example.com
-
-// Option 2: Config file (kabran.config.mjs or telemetry.config.mjs)
-export default {
-  telemetry: {
-    endpoint: 'https://your-otel-collector.example.com',
-    corsUrls: [/localhost/, /.*\.yourdomain\.com/],
-  }
-}
-```
-
-### Features
-
-* **cli:** add unified `kabran` CLI with quality pyramid levels
-  * New `kabran` command with L1-L4 quality pyramid architecture
-  * `kabran check` - L1 static analysis (lint, types, format, validators)
-  * `kabran test:unit` - L2 unit tests
-  * `kabran test:integration` - L3 integration tests
-  * `kabran test:e2e` - L4 E2E tests
-  * `kabran test` - Run L2 + L3 tests
-  * `kabran ci` - Full CI pipeline with configurable steps
-  * `kabran build` - Project build command
-  * Support for `--fix`, `--watch`, `--coverage` flags
-  * Configuration via `kabran.config.mjs` (check, test, ci, build sections)
-
-* **config:** add config-loader and refactor validators to use project config
-  * New `config-loader.mjs` for loading `kabran.config.mjs/js/json`
-  * Deep merge with defaults for backwards compatibility
-  * Validators now read config from project's kabran.config file
-
-* **ci:** export CI metrics to OTel Collector (AGT-1097)
-  * Add `export_ci_metrics_to_otel` function in ci-core.sh
-  * Send metrics to OTel Collector when `OTEL_ENDPOINT` is configured
-  * Metrics exported: `ci.build.duration`, `ci.build.status`, `ci.step.duration`, `ci.step.count`
-  * Fail-safe implementation: telemetry failures never fail the build
-  * Aggressive timeouts: 1s connect, 5s total
-  * Preserves trace_id for correlation with existing telemetry
-
 ## [1.9.0](https://github.com/kabran-owner/kabran-config/compare/v1.8.0...v1.9.0) (2026-01-13)
 
 ### Features
@@ -114,28 +45,6 @@ export default {
 ### Features
 
 * **ci:** add trace_id generation and telemetry improvements ([#11](https://github.com/kabran-owner/kabran-config/issues/11)) ([8101d1c](https://github.com/kabran-owner/kabran-config/commit/8101d1cae62d1a2bb6d7f5718c6543ee9099da06))
-
-## [1.8.0](https://github.com/kabran-owner/kabran-config/compare/v1.7.0...v1.8.0) (2026-01-13)
-
-### Features
-
-* **ci:** add automatic trace_id generation for local CI runs (GAP-001)
-  * Generate W3C-compliant trace_id when TRACEPARENT is not set
-  * Support for OTEL_TRACE_ID and GITHUB_RUN_ID as fallback sources
-  * Export TRACEPARENT for subprocess propagation
-  * Include trace source in ci-result.json (local/github/otel_env/external)
-
-* **ci:** populate errors_recorded in telemetry extension (GAP-002)
-  * Count failed steps as errors_recorded in ci-result.json
-  * spans_exported documented as 0 until OTel export is implemented
-
-### Documentation
-
-* **telemetry:** add comprehensive README for telemetry package (GAP-003)
-  * Quick start guides for Node.js, Frontend, and Edge runtimes
-  * Configuration reference with all environment variables
-  * Module reference for all exports
-  * Best practices and troubleshooting guide
 
 ## [1.7.0](https://github.com/kabran-owner/kabran-config/compare/v1.6.0...v1.7.0) (2026-01-13)
 
@@ -156,100 +65,39 @@ export default {
 
 * **validators:** add JSON output support for all validators ([44165c9](https://github.com/kabran-owner/kabran-config/commit/44165c969b4059a15a05560cad3193aae0781c42))
 
-### Documentation
-
-* add PROP-004 unified CI schema to roadmap ([a7d4762](https://github.com/kabran-owner/kabran-config/commit/a7d4762efb6b891c76f1ae5371da340419679465))
-
 ## [1.4.0](https://github.com/kabran-owner/kabran-config/compare/v1.3.0...v1.4.0) (2026-01-13)
 
 ### Features
 
 * **ci:** add unified ci-result.json v2 schema with timing and quality metrics ([45034f6](https://github.com/kabran-owner/kabran-config/commit/45034f6fa95ab9b14ab4bed8d64101b09ad28ecb))
 
-### Documentation
-
-* fix CHANGELOG.md formatting after semantic-release ([c51209a](https://github.com/kabran-owner/kabran-config/commit/c51209a9179fffdb13fa13ca91de86d648cf3a9f))
-* remove frontmatter from CHANGELOG.md ([af0b668](https://github.com/kabran-owner/kabran-config/commit/af0b6683f9099f14cc8e1766733fbffc83c087b8))
-
-# Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [1.3.0] - 2026-01-13
 
 ### Added
 
 * **Quality Standard Validator** (PROP-002)
-  * New `quality-standard-validator.mjs` script to validate `docs/quality/001-quality-standard.md`
-  * Validates required sections: Frontmatter, ESLint Rules, Prettier Rules, TypeScript Rules
-  * Detects undocumented overrides in ESLint config
-  * Detects documented overrides missing from code
-  * Integrated with `kabran-setup` CLI - automatically creates quality-standard.md
-
 * **Automated Releases with semantic-release**
-  * GitHub Actions workflow for automated npm publishing
-  * Automatic version bumping based on conventional commits
-  * Automatic CHANGELOG generation
-  * GitHub releases created automatically
-
-### Fixed
-
-* Corrected bin path format in package.json
 
 ## [1.2.0] - 2026-01-13
 
 ### Added
 
 * **Project Templates & Setup CLI** (PROP-001)
-  * New `npx kabran-setup` CLI for automated project configuration
-  * Templates for GitHub Actions workflows (CI, commitlint, PR validation)
-  * Templates for Husky hooks (pre-commit, commit-msg, pre-push)
-  * Config file templates using re-export pattern for automatic updates
-  * Support for Node.js (`--type=node`), React (`--type=react`), and base projects
-  * Sync modes (`--sync-workflows`, `--sync-husky`) for updating existing projects
-  * Dry-run mode (`--dry-run`) for previewing changes
-  * Force mode (`--force`) for overwriting existing files
-
-* Quality tooling roadmap (`docs/ROADMAP.md`)
 
 ## [1.1.1] - 2026-01-13
 
 ### Fixed
 
-* `license:check` false negative when license-checker is installed (BUG-001)
-  * `license-checker --version` returns exit code 1 even when successful
-  * Changed availability check to use `--summary` instead
+* `license:check` false negative when license-checker is installed
 
 ## [1.1.0] - 2026-01-13
 
 ### Fixed
 
 * Test alignment and critical bug fixes
-* npm compatibility in monorepo fixture for CI
-* package-lock.json sync with peerDependencies
 
 ## [1.0.0] - 2026-01-13
 
 ### Added
 
 * Initial public release on npm registry
-* Base ESLint configuration with flat config support
-* Node.js ESLint configuration
-* React ESLint configuration
-* Prettier configuration
-* TypeScript configurations (base, node, react)
-* Commitlint configuration
-* Lint-staged configuration
-* Environment validator script
-* README validator script
-* License check script
-* Dependency report script
-* CI/CD standardization scripts (ci-core.sh, ci-runner.sh)
-* Deploy scripts (deploy-core.sh, deploy-runner.sh)
-
-### Notes
-
-This package was extracted from the private Kabran monorepo and released as a standalone public package. Version numbering was reset to 1.0.0 for the public release.
