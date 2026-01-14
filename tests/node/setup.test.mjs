@@ -387,9 +387,10 @@ describe('setup CLI', () => {
     it('should create all config files', () => {
       const results = setupConfigs(tempDir, templatesDir, {type: 'node'});
 
-      expect(results.created).toBe(4);
+      expect(results.created).toBe(5);
       expect(existsSync(join(tempDir, 'eslint.config.mjs'))).toBe(true);
       expect(existsSync(join(tempDir, 'prettier.config.mjs'))).toBe(true);
+      expect(existsSync(join(tempDir, '.prettierignore'))).toBe(true);
       expect(existsSync(join(tempDir, 'commitlint.config.mjs'))).toBe(true);
       expect(existsSync(join(tempDir, 'lint-staged.config.mjs'))).toBe(true);
     });
@@ -423,7 +424,7 @@ describe('setup CLI', () => {
       const results = setupConfigs(tempDir, templatesDir, {type: 'node'});
 
       expect(results.skipped).toBe(1);
-      expect(results.created).toBe(3);
+      expect(results.created).toBe(4);
       expect(readFileSync(join(tempDir, 'eslint.config.mjs'), 'utf-8')).toBe('existing');
     });
 
@@ -433,14 +434,14 @@ describe('setup CLI', () => {
       const results = setupConfigs(tempDir, templatesDir, {type: 'node', force: true});
 
       expect(results.overwritten).toBe(1);
-      expect(results.created).toBe(3);
+      expect(results.created).toBe(4);
       expect(readFileSync(join(tempDir, 'eslint.config.mjs'), 'utf-8')).not.toBe('existing');
     });
 
     it('should not modify files in dry-run mode', () => {
       const results = setupConfigs(tempDir, templatesDir, {type: 'node', dryRun: true});
 
-      expect(results.created).toBe(4);
+      expect(results.created).toBe(5);
       expect(existsSync(join(tempDir, 'eslint.config.mjs'))).toBe(false);
     });
   });
@@ -451,7 +452,7 @@ describe('setup CLI', () => {
 
       expect(summary.workflows.created).toBe(3);
       expect(summary.husky.created).toBe(3);
-      expect(summary.configs.created).toBe(4);
+      expect(summary.configs.created).toBe(5);
     });
 
     it('should skip existing files by default', () => {
@@ -474,7 +475,7 @@ describe('setup CLI', () => {
 
       expect(summary.workflows.created).toBe(3);
       expect(summary.husky.created).toBe(0);
-      expect(summary.configs.created).toBe(4);
+      expect(summary.configs.created).toBe(5);
     });
 
     it('should skip workflows with --skip-workflows', () => {
@@ -482,7 +483,7 @@ describe('setup CLI', () => {
 
       expect(summary.workflows.created).toBe(0);
       expect(summary.husky.created).toBe(3);
-      expect(summary.configs.created).toBe(4);
+      expect(summary.configs.created).toBe(5);
     });
 
     it('should only sync workflows with --sync-workflows', () => {
@@ -539,7 +540,7 @@ describe('setup CLI', () => {
 
       expect(summary.workflows.created).toBe(3);
       expect(summary.husky.created).toBe(3);
-      expect(summary.configs.created).toBe(4);
+      expect(summary.configs.created).toBe(5);
 
       // No files should be created
       expect(existsSync(join(tempDir, '.github'))).toBe(false);
@@ -572,7 +573,7 @@ describe('setup CLI', () => {
       // Should skip everything
       expect(summary.workflows.skipped).toBe(3);
       expect(summary.husky.skipped).toBe(3);
-      expect(summary.configs.skipped).toBe(4);
+      expect(summary.configs.skipped).toBe(5);
       expect(summary.qualityStandard.skipped).toBe(1);
 
       // Content should be the same
