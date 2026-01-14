@@ -9,6 +9,13 @@ created_at: 2026-01-13
 updated_at: 2026-01-13
 ---
 
+## [1.10.0](https://github.com/kabran-owner/kabran-config/compare/v1.9.0...v1.10.0) (2026-01-14)
+
+
+### Features
+
+* **ci:** export CI metrics to OTel Collector (AGT-1097) ([#15](https://github.com/kabran-owner/kabran-config/issues/15)) ([86527e9](https://github.com/kabran-owner/kabran-config/commit/86527e9e81625c8889e903653d0515384a5a4e40))
+
 ## [Unreleased]
 
 ### Features
