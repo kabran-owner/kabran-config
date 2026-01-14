@@ -9,6 +9,17 @@ created_at: 2026-01-13
 updated_at: 2026-01-14
 ---
 
+## [2.0.0](https://github.com/kabran-owner/kabran-config/compare/v1.12.0...v2.0.0) (2026-01-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **security:** Telemetry configuration now requires explicit endpoint setup
+
+### Bug Fixes
+
+* **security:** remove hardcoded internal URLs from public repository ([#22](https://github.com/kabran-owner/kabran-config/issues/22)) ([8cf4aaa](https://github.com/kabran-owner/kabran-config/commit/8cf4aaa089b003508fb89a952c73ae42daf2cf5d))
+
 ## [1.12.0](https://github.com/kabran-owner/kabran-config/compare/v1.11.0...v1.12.0) (2026-01-14)
 
 
