@@ -1,0 +1,9 @@
+{
+  "readme": {
+    "required": ["Quick Start", "Usage"],
+    "recommended": ["FAQ"]
+  },
+  "quality": {
+    "standardPath": "docs/standards/quality.md"
+  }
+}

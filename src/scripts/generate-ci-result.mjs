@@ -103,7 +103,7 @@ async function runValidators(projectRoot, options = {}) {
 
   if (!options.skipReadme) {
     try {
-      results.readme = getReadmeCheckResult(projectRoot)
+      results.readme = await getReadmeCheckResult(projectRoot)
     } catch (err) {
       results.readme = { status: 'fail', error: err.message }
     }
@@ -119,7 +119,7 @@ async function runValidators(projectRoot, options = {}) {
 
   if (!options.skipQualityStandard) {
     try {
-      results.quality_standard = getQualityStandardCheckResult(projectRoot)
+      results.quality_standard = await getQualityStandardCheckResult(projectRoot)
     } catch (err) {
       results.quality_standard = { status: 'fail', error: err.message }
     }

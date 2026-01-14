@@ -77,33 +77,33 @@ MIT`;
   });
 
   describe('validateReadme', () => {
-    it('passes for README with all required sections', () => {
-      const result = validateReadme(path.join(fixturesPath, 'valid'), true);
+    it('passes for README with all required sections', async () => {
+      const result = await validateReadme(path.join(fixturesPath, 'valid'), true);
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
-    it('fails for README missing required sections', () => {
-      const result = validateReadme(path.join(fixturesPath, 'missing-sections'), true);
+    it('fails for README missing required sections', async () => {
+      const result = await validateReadme(path.join(fixturesPath, 'missing-sections'), true);
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors.some(e => e.includes('Installation'))).toBe(true);
       expect(result.errors.some(e => e.includes('License'))).toBe(true);
     });
 
-    it('fails when no README exists', () => {
-      const result = validateReadme(path.join(fixturesPath, 'no-readme'), true);
+    it('fails when no README exists', async () => {
+      const result = await validateReadme(path.join(fixturesPath, 'no-readme'), true);
       expect(result.valid).toBe(false);
       expect(result.errors).toContain('README.md not found in project root');
     });
 
-    it('returns warnings for missing recommended sections', () => {
-      const result = validateReadme(path.join(fixturesPath, 'missing-sections'), true);
+    it('returns warnings for missing recommended sections', async () => {
+      const result = await validateReadme(path.join(fixturesPath, 'missing-sections'), true);
       expect(result.warnings.length).toBeGreaterThan(0);
     });
 
-    it('returns no warnings when all sections present', () => {
-      const result = validateReadme(path.join(fixturesPath, 'valid'), true);
+    it('returns no warnings when all sections present', async () => {
+      const result = await validateReadme(path.join(fixturesPath, 'valid'), true);
       expect(result.warnings).toHaveLength(0);
     });
   });
@@ -136,35 +136,35 @@ MIT`;
   });
 
   describe('getReadmeCheckResult', () => {
-    it('returns pass status for valid README', () => {
-      const result = getReadmeCheckResult(path.join(fixturesPath, 'valid'));
+    it('returns pass status for valid README', async () => {
+      const result = await getReadmeCheckResult(path.join(fixturesPath, 'valid'));
       expect(result.status).toBe('pass');
       expect(result.found).toBe(true);
       expect(result.missing_required).toHaveLength(0);
     });
 
-    it('returns fail status when README not found', () => {
-      const result = getReadmeCheckResult(path.join(fixturesPath, 'no-readme'));
+    it('returns fail status when README not found', async () => {
+      const result = await getReadmeCheckResult(path.join(fixturesPath, 'no-readme'));
       expect(result.status).toBe('fail');
       expect(result.found).toBe(false);
     });
 
-    it('returns fail status for missing required sections', () => {
-      const result = getReadmeCheckResult(path.join(fixturesPath, 'missing-sections'));
+    it('returns fail status for missing required sections', async () => {
+      const result = await getReadmeCheckResult(path.join(fixturesPath, 'missing-sections'));
       expect(result.status).toBe('fail');
       expect(result.missing_required.length).toBeGreaterThan(0);
     });
 
-    it('returns warn status for missing recommended sections only', () => {
+    it('returns warn status for missing recommended sections only', async () => {
       // Valid README has all required but missing some recommended
-      const result = getReadmeCheckResult(path.join(fixturesPath, 'valid'));
+      const result = await getReadmeCheckResult(path.join(fixturesPath, 'valid'));
       // If all required are present but some recommended missing, status is warn
       // But 'valid' fixture has all sections, so should be pass
       expect(['pass', 'warn']).toContain(result.status);
     });
 
-    it('has correct structure for ci-result.json', () => {
-      const result = getReadmeCheckResult(path.join(fixturesPath, 'valid'));
+    it('has correct structure for ci-result.json', async () => {
+      const result = await getReadmeCheckResult(path.join(fixturesPath, 'valid'));
       expect(result).toHaveProperty('status');
       expect(result).toHaveProperty('found');
       expect(result).toHaveProperty('missing_required');
