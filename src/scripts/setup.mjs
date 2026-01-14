@@ -427,6 +427,7 @@ export function setupConfigs(projectDir, templatesDir, options) {
   // Other configs (same for all types)
   const otherConfigs = [
     {name: 'prettier.config.mjs', src: 'prettier.config.mjs'},
+    {name: '.prettierignore', src: '.prettierignore'},
     {name: 'commitlint.config.mjs', src: 'commitlint.config.mjs'},
     {name: 'lint-staged.config.mjs', src: 'lint-staged.config.mjs'},
   ];
