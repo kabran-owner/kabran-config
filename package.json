@@ -9,6 +9,7 @@
     "access": "public"
   },
   "bin": {
+    "kabran": "src/cli/kabran.mjs",
     "kabran-setup": "src/scripts/setup.mjs",
     "kabran-ci": "src/scripts/ci/ci-runner.sh",
     "kabran-pr-comment": "src/scripts/pr-quality-comment.mjs",
@@ -17,6 +18,10 @@
   },
   "exports": {
     "./core/config-loader": "./src/core/config-loader.mjs",
+    "./cli/commands/check": "./src/cli/commands/check.mjs",
+    "./cli/commands/test": "./src/cli/commands/test.mjs",
+    "./cli/commands/ci": "./src/cli/commands/ci.mjs",
+    "./cli/commands/build": "./src/cli/commands/build.mjs",
     "./eslint": "./src/eslint.mjs",
     "./eslint/node": "./src/eslint-node.mjs",
     "./eslint/react": "./src/eslint-react.mjs",
