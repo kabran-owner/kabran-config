@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Kabran Traceability Core - Shared Functions
-# Part of @kabran-owner/kabran-config
+# Part of @kabran-tecnologia/kabran-config
 # Implements PROP-006: JSDoc Traceability Tags
 # ==============================================================================
 

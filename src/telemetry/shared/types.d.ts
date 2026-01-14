@@ -21,7 +21,7 @@ export interface TelemetryConfig {
   /** Deployment environment (default: from NODE_ENV or 'development') */
   environment?: string
 
-  /** OTLP endpoint URL (default: 'https://otel.kabran.com.br') */
+  /** OTLP endpoint URL (required - set via OTEL_ENDPOINT env var) */
   endpoint?: string
 
   /** Sampling rate 0.0-1.0 (default: 0.1) */

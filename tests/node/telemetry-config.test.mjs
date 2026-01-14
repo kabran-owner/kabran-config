@@ -208,8 +208,8 @@ describe('telemetry/config', () => {
   })
 
   describe('defaults', () => {
-    it('has correct default endpoint', () => {
-      expect(DEFAULT_ENDPOINT).toBe('https://otel.kabran.com.br')
+    it('has null default endpoint (requires explicit config)', () => {
+      expect(DEFAULT_ENDPOINT).toBeNull()
     })
 
     it('has correct default sample rate', () => {

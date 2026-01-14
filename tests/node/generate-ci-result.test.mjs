@@ -11,7 +11,7 @@ describe('generate-ci-result', () => {
     it('generates valid result from empty input', () => {
       const result = generateCiResult({})
 
-      expect(result.$schema).toBe('https://kabran.dev/schemas/ci-result.v2.json')
+      expect(result.$schema).toBe('ci-result.v2.json')
       expect(result.version).toBe('1.0.0')
       expect(result.meta.generated_at).toBeDefined()
       expect(result.meta.generator).toContain('kabran-config')

@@ -18,7 +18,6 @@ updated_at: 2026-01-14
 
 ## [1.11.0](https://github.com/kabran-owner/kabran-config/compare/v1.10.0...v1.11.0) (2026-01-14)
 
-
 ### Features
 
 * **config:** add config-loader and refactor validators to use project config ([#17](https://github.com/kabran-owner/kabran-config/issues/17)) ([915a24d](https://github.com/kabran-owner/kabran-config/commit/915a24d580a6ecf142ec2dca20f8a29e2aa628d4))
@@ -30,6 +29,34 @@ updated_at: 2026-01-14
 * **ci:** export CI metrics to OTel Collector (AGT-1097) ([#15](https://github.com/kabran-owner/kabran-config/issues/15)) ([86527e9](https://github.com/kabran-owner/kabran-config/commit/86527e9e81625c8889e903653d0515384a5a4e40))
 
 ## [Unreleased]
+
+### ⚠️ BREAKING CHANGES
+
+* **telemetry:** remove hardcoded internal URLs for public repository security
+  * `DEFAULT_ENDPOINT` is now `null` - users **MUST** set `OTEL_ENDPOINT` env var
+  * `DEFAULT_CORS_URLS` now only contains `/localhost/` pattern
+  * Users must configure their own CORS URLs in telemetry config
+  * Schema `$id` changed from absolute URLs to local references (`ci-result.v2.json`)
+
+### Migration Guide
+
+**Telemetry Configuration:**
+
+```javascript
+// Before: endpoint was auto-configured
+// After: explicit configuration required
+
+// Option 1: Environment variable
+OTEL_ENDPOINT=https://your-otel-collector.example.com
+
+// Option 2: Config file (kabran.config.mjs or telemetry.config.mjs)
+export default {
+  telemetry: {
+    endpoint: 'https://your-otel-collector.example.com',
+    corsUrls: [/localhost/, /.*\.yourdomain\.com/],
+  }
+}
+```
 
 ### Features
 

@@ -216,7 +216,7 @@ export function generateCiResult(input) {
 
   // Build result object
   const result = {
-    $schema: 'https://kabran.dev/schemas/ci-result.v2.json',
+    $schema: 'ci-result.v2.json',
     version: '1.0.0',
 
     meta,
