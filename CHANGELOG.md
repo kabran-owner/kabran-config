@@ -4,13 +4,12 @@ id: 01KEWPJKYF92BGEA9FHQB7BNYN
 type: guide
 status: active
 tags: [documentation, guide]
-version: 0.1.1
+version: 0.1.2
 created_at: 2026-01-13
-updated_at: 2026-01-13
+updated_at: 2026-01-14
 ---
 
 ## [1.10.0](https://github.com/kabran-owner/kabran-config/compare/v1.9.0...v1.10.0) (2026-01-14)
-
 
 ### Features
 
@@ -19,6 +18,23 @@ updated_at: 2026-01-13
 ## [Unreleased]
 
 ### Features
+
+* **cli:** add unified `kabran` CLI with quality pyramid levels
+  * New `kabran` command with L1-L4 quality pyramid architecture
+  * `kabran check` - L1 static analysis (lint, types, format, validators)
+  * `kabran test:unit` - L2 unit tests
+  * `kabran test:integration` - L3 integration tests
+  * `kabran test:e2e` - L4 E2E tests
+  * `kabran test` - Run L2 + L3 tests
+  * `kabran ci` - Full CI pipeline with configurable steps
+  * `kabran build` - Project build command
+  * Support for `--fix`, `--watch`, `--coverage` flags
+  * Configuration via `kabran.config.mjs` (check, test, ci, build sections)
+
+* **config:** add config-loader and refactor validators to use project config
+  * New `config-loader.mjs` for loading `kabran.config.mjs/js/json`
+  * Deep merge with defaults for backwards compatibility
+  * Validators now read config from project's kabran.config file
 
 * **ci:** export CI metrics to OTel Collector (AGT-1097)
   * Add `export_ci_metrics_to_otel` function in ci-core.sh
