@@ -298,4 +298,149 @@ describe('config-loader', () => {
       expect(defaults.ci.steps).toEqual(['check', 'test:unit', 'build']);
     });
   });
+
+  describe('Turbo monorepo detection', () => {
+    const turboTempPath = path.join(tempFixturesPath, 'turbo-detection');
+
+    beforeAll(() => {
+      mkdirSync(turboTempPath, {recursive: true});
+    });
+
+    afterAll(() => {
+      // Restore env
+      delete process.env.DOPPLER_TOKEN;
+    });
+
+    it('detects turbo.json and sets turbo flag to true', () => {
+      const turboDir = path.join(turboTempPath, 'basic-turbo');
+      mkdirSync(turboDir, {recursive: true});
+      writeFileSync(
+        path.join(turboDir, 'turbo.json'),
+        JSON.stringify({
+          "$schema": "https://turbo.build/schema.json",
+          "tasks": {
+            "build": {},
+            "lint": {},
+            "type-check": {},
+            "test": {}
+          }
+        })
+      );
+
+      const defaults = detectToolDefaults(turboDir);
+
+      expect(defaults.turbo).toBe(true);
+    });
+
+    it('uses turbo run commands when turbo.json is detected', () => {
+      const turboDir = path.join(turboTempPath, 'turbo-commands');
+      mkdirSync(turboDir, {recursive: true});
+      writeFileSync(
+        path.join(turboDir, 'turbo.json'),
+        JSON.stringify({"$schema": "https://turbo.build/schema.json"})
+      );
+
+      const defaults = detectToolDefaults(turboDir);
+
+      expect(defaults.check.lint).toBe('turbo run lint');
+      expect(defaults.check.types).toBe('turbo run type-check');
+      expect(defaults.check.format).toBe('turbo run format:check');
+      expect(defaults.build.command).toBe('turbo run build');
+    });
+
+    it('uses turbo run for tests when turbo.json is detected', () => {
+      const turboDir = path.join(turboTempPath, 'turbo-tests');
+      mkdirSync(turboDir, {recursive: true});
+      writeFileSync(
+        path.join(turboDir, 'turbo.json'),
+        JSON.stringify({"$schema": "https://turbo.build/schema.json"})
+      );
+
+      const defaults = detectToolDefaults(turboDir);
+
+      // Commands may be wrapped with Doppler if configured globally on the machine
+      expect(defaults.test.unit.command).toContain('turbo run test');
+      expect(defaults.test.integration.command).toContain('turbo run test:integration');
+      expect(defaults.test.e2e.command).toContain('turbo run test:e2e');
+    });
+
+    it('sets correct CI steps for Turbo projects', () => {
+      const turboDir = path.join(turboTempPath, 'turbo-ci-steps');
+      mkdirSync(turboDir, {recursive: true});
+      writeFileSync(
+        path.join(turboDir, 'turbo.json'),
+        JSON.stringify({"$schema": "https://turbo.build/schema.json"})
+      );
+
+      const defaults = detectToolDefaults(turboDir);
+
+      expect(defaults.ci.steps).toEqual(['check', 'test:unit', 'build']);
+    });
+
+    it('wraps Turbo test commands with Doppler when configured', () => {
+      const turboDir = path.join(turboTempPath, 'turbo-with-doppler');
+      mkdirSync(turboDir, {recursive: true});
+      writeFileSync(
+        path.join(turboDir, 'turbo.json'),
+        JSON.stringify({"$schema": "https://turbo.build/schema.json"})
+      );
+      writeFileSync(
+        path.join(turboDir, 'doppler.yaml'),
+        'setup:\n  project: test\n  config: dev'
+      );
+
+      const defaults = detectToolDefaults(turboDir);
+
+      expect(defaults.test.unit.doppler).toBe(true);
+      expect(defaults.test.unit.command).toBe('doppler run -- turbo run test');
+      expect(defaults.test.integration.command).toBe('doppler run -- turbo run test:integration');
+      expect(defaults.test.e2e.command).toBe('doppler run -- turbo run test:e2e');
+    });
+
+    it('sets turbo flag to false when turbo.json is NOT present', () => {
+      const nonTurboDir = path.join(turboTempPath, 'non-turbo');
+      mkdirSync(nonTurboDir, {recursive: true});
+      writeFileSync(path.join(nonTurboDir, 'package.json'), '{}');
+
+      const defaults = detectToolDefaults(nonTurboDir);
+
+      expect(defaults.turbo).toBe(false);
+    });
+
+    it('uses standard commands when turbo.json is NOT present', () => {
+      const standardDir = path.join(turboTempPath, 'standard-project');
+      mkdirSync(standardDir, {recursive: true});
+      writeFileSync(path.join(standardDir, 'eslint.config.mjs'), 'export default {}');
+      writeFileSync(path.join(standardDir, 'tsconfig.json'), '{}');
+      writeFileSync(path.join(standardDir, 'vitest.config.ts'), 'export default {}');
+
+      const defaults = detectToolDefaults(standardDir);
+
+      expect(defaults.turbo).toBe(false);
+      expect(defaults.check.lint).toBe('npx eslint .');
+      expect(defaults.check.types).toBe('npx tsc --noEmit');
+      expect(defaults.test.unit.command).toContain('vitest run');
+    });
+
+    it('prioritizes Turbo detection over individual tool configs', () => {
+      // Even if ESLint/TS configs exist, Turbo mode takes precedence
+      const turboWithTools = path.join(turboTempPath, 'turbo-with-individual-configs');
+      mkdirSync(turboWithTools, {recursive: true});
+      writeFileSync(
+        path.join(turboWithTools, 'turbo.json'),
+        JSON.stringify({"$schema": "https://turbo.build/schema.json"})
+      );
+      writeFileSync(path.join(turboWithTools, 'eslint.config.mjs'), 'export default {}');
+      writeFileSync(path.join(turboWithTools, 'tsconfig.json'), '{}');
+      writeFileSync(path.join(turboWithTools, 'vitest.config.ts'), 'export default {}');
+
+      const defaults = detectToolDefaults(turboWithTools);
+
+      // Should use turbo run, not direct npx commands
+      expect(defaults.turbo).toBe(true);
+      expect(defaults.check.lint).toBe('turbo run lint');
+      expect(defaults.check.types).toBe('turbo run type-check');
+      expect(defaults.test.unit.command).toContain('turbo run test');
+    });
+  });
 });
