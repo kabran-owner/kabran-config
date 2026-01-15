@@ -59,10 +59,27 @@ function hasToolConfig(cwd, configFiles) {
 
 /**
  * Check if Doppler is configured for the current directory.
+ *
+ * Detection methods (in order of reliability):
+ * 1. DOPPLER_TOKEN environment variable is set
+ * 2. doppler.yaml exists in the project
+ * 3. doppler configure get token returns a value (CLI-level config)
+ *
  * @param {string} cwd - Working directory
- * @returns {boolean} True if Doppler token is configured
+ * @returns {boolean} True if Doppler is available
  */
 function hasDopplerConfigured(cwd) {
+  // Method 1: Environment variable (most common in CI/CD and scoped setups)
+  if (process.env.DOPPLER_TOKEN) {
+    return true;
+  }
+
+  // Method 2: doppler.yaml in project (common for project-level config)
+  if (existsSync(join(cwd, 'doppler.yaml'))) {
+    return true;
+  }
+
+  // Method 3: CLI-level configuration (doppler setup was run)
   try {
     const result = execSync('doppler configure get token', {
       cwd,
@@ -72,7 +89,18 @@ function hasDopplerConfigured(cwd) {
     });
     return result.trim().length > 0;
   } catch {
-    return false;
+    // Method 4: Try doppler secrets as last resort (validates full setup)
+    try {
+      execSync('doppler secrets --only-names', {
+        cwd,
+        stdio: 'pipe',
+        encoding: 'utf-8',
+        timeout: 10000,
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
 
