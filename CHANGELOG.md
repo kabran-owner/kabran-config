@@ -2,13 +2,20 @@
 
 ## [2.1.1](https://github.com/kabran-owner/kabran-config/compare/v2.1.0...v2.1.1) (2026-01-15)
 
-
 ### Bug Fixes
 
 * **cli:** improve Doppler auto-detection for all configuration methods ([#27](https://github.com/kabran-owner/kabran-config/issues/27)) ([45d28d4](https://github.com/kabran-owner/kabran-config/commit/45d28d458513eb1aa919840caaa98cbfcd6fc9ab))
 * **docs:** remove erroneous frontmatter from CHANGELOG ([#26](https://github.com/kabran-owner/kabran-config/issues/26)) ([701afd7](https://github.com/kabran-owner/kabran-config/commit/701afd78a796937f0bf1716bdcab220462e13953))
 
 ## [Unreleased]
+
+### Features
+
+* **cli:** add native support for Turbo monorepos ([AGT-1117](https://linear.app/kabran/issue/AGT-1117))
+  * Auto-detects `turbo.json` in project root
+  * Uses `turbo run` commands for lint, type-check, format, test, and build
+  * Integrates with Doppler for secrets injection in Turbo test commands
+  * Exposes `turbo` flag in config for consumers to check detection status
 
 ### Bug Fixes
 

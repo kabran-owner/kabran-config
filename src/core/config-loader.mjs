@@ -5,8 +5,9 @@
  * Enables projects to customize validator behavior without modifying kabran-config.
  *
  * Features:
- * - Smart detection of tools (ESLint, TypeScript, Prettier, Vitest, Playwright)
+ * - Smart detection of tools (ESLint, TypeScript, Prettier, Vitest, Playwright, Turbo)
  * - Automatic Doppler integration for secrets injection in tests
+ * - Native support for Turbo monorepos (auto-detects turbo.json)
  * - Convention over configuration - works out of the box
  *
  * @module config-loader
@@ -45,6 +46,7 @@ const TOOL_CONFIGS = {
   prettier: ['prettier.config.mjs', 'prettier.config.js', '.prettierrc', '.prettierrc.json', '.prettierrc.js'],
   vitest: ['vitest.config.ts', 'vitest.config.mts', 'vitest.config.js', 'vitest.config.mjs'],
   playwright: ['playwright.config.ts', 'playwright.config.js'],
+  turbo: ['turbo.json'],
 };
 
 /**
@@ -117,6 +119,15 @@ export function wrapWithDoppler(cmd, useDoppler) {
 /**
  * Detect available tools and generate smart defaults.
  * Only configures commands for tools that are actually set up in the project.
+ *
+ * Turbo monorepo support:
+ * - When turbo.json is detected, commands delegate to `turbo run` for:
+ *   - Lint: `turbo run lint`
+ *   - Types: `turbo run type-check`
+ *   - Tests: `turbo run test`
+ *   - Build: `turbo run build`
+ * - This ensures proper monorepo handling with caching and workspace orchestration.
+ *
  * @param {string} cwd - Working directory
  * @returns {object} Detected defaults for CLI commands
  */
@@ -126,10 +137,76 @@ export function detectToolDefaults(cwd) {
     test: {},
     build: {},
     ci: { steps: [] },
+    turbo: false,
   };
 
   const hasDoppler = hasDopplerConfigured(cwd);
+  const hasTurbo = hasToolConfig(cwd, TOOL_CONFIGS.turbo);
 
+  // Store turbo detection result for consumers
+  defaults.turbo = hasTurbo;
+
+  // Turbo monorepo mode: delegate to turbo run commands
+  if (hasTurbo) {
+    return detectTurboDefaults(defaults, hasDoppler);
+  }
+
+  // Standard single-package mode: use direct tool commands
+  return detectStandardDefaults(cwd, defaults, hasDoppler);
+}
+
+/**
+ * Generate defaults for Turbo monorepo projects.
+ * Uses `turbo run` commands for all operations.
+ * @param {object} defaults - Base defaults object
+ * @param {boolean} hasDoppler - Whether Doppler is configured
+ * @returns {object} Turbo-specific defaults
+ */
+function detectTurboDefaults(defaults, hasDoppler) {
+  // L1: Static Analysis via Turbo
+  defaults.check.lint = 'turbo run lint';
+  defaults.check.types = 'turbo run type-check';
+  defaults.check.format = 'turbo run format:check';
+
+  // L2: Unit Tests via Turbo (with Doppler support)
+  const testCmd = 'turbo run test';
+  defaults.test.unit = {
+    command: wrapWithDoppler(testCmd, hasDoppler),
+    doppler: hasDoppler,
+  };
+
+  // L3: Integration Tests via Turbo (with Doppler support)
+  const integrationCmd = 'turbo run test:integration';
+  defaults.test.integration = {
+    command: wrapWithDoppler(integrationCmd, hasDoppler),
+    doppler: hasDoppler,
+  };
+
+  // L4: E2E Tests via Turbo (with Doppler support)
+  const e2eCmd = 'turbo run test:e2e';
+  defaults.test.e2e = {
+    command: wrapWithDoppler(e2eCmd, hasDoppler),
+    doppler: hasDoppler,
+  };
+
+  // Build via Turbo
+  defaults.build.command = 'turbo run build';
+
+  // CI steps for Turbo projects
+  defaults.ci.steps = ['check', 'test:unit', 'build'];
+
+  return defaults;
+}
+
+/**
+ * Generate defaults for standard single-package projects.
+ * Uses direct tool commands (npx eslint, npx tsc, etc).
+ * @param {string} cwd - Working directory
+ * @param {object} defaults - Base defaults object
+ * @param {boolean} hasDoppler - Whether Doppler is configured
+ * @returns {object} Standard project defaults
+ */
+function detectStandardDefaults(cwd, defaults, hasDoppler) {
   // L1: Static Analysis
   if (hasToolConfig(cwd, TOOL_CONFIGS.eslint)) {
     defaults.check.lint = 'npx eslint .';
