@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/kabran-owner/kabran-config/compare/v2.2.0...v2.2.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* **hooks:** make pre-push hook lightweight by design ([#31](https://github.com/kabran-owner/kabran-config/issues/31)) ([284397a](https://github.com/kabran-owner/kabran-config/commit/284397a37326ab1e633bd15f25a5a9378e570f0d))
+
 ## [2.2.0](https://github.com/kabran-owner/kabran-config/compare/v2.1.1...v2.2.0) (2026-01-15)
 
 
