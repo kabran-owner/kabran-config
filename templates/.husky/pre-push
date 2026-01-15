@@ -1,4 +1,5 @@
-npm run lint
-npm run type-check
-npm test
-npm run build
+# Pre-push hook - kept lightweight by design
+# Full validation (lint, tests, build) runs in CI asynchronously
+#
+# Uncomment below if you want local type-check before push:
+# npm run type-check

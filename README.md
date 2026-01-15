@@ -368,8 +368,9 @@ echo "npx lint-staged" > .husky/pre-commit
 # Add commit-msg hook
 echo "npx --no -- commitlint --edit \$1" > .husky/commit-msg
 
-# Add pre-push hook (optional)
-echo "npm run type-check && npm test" > .husky/pre-push
+# Add pre-push hook (optional - kept lightweight by design)
+# Full validation runs in CI. Uncomment type-check if desired:
+# echo "npm run type-check" > .husky/pre-push
 ```
 
 ---
@@ -476,19 +477,12 @@ node node_modules/@kabran-tecnologia/kabran-config/src/scripts/license-check.mjs
 }
 ```
 
-**Usage in CI/CD:**
+**Usage in CI (recommended):**
 
 ```yaml
-# .github/workflows/quality.yml
+# .github/workflows/ci.yml
 - name: License Check
   run: npm run license:check
-```
-
-**Usage in Husky:**
-
-```bash
-# .husky/pre-push
-npm run license:check
 ```
 
 **Blocked licenses:** GPL, AGPL, LGPL, EUPL (viral copyleft)
@@ -607,14 +601,7 @@ node node_modules/@kabran-tecnologia/kabran-config/src/scripts/env-validator.mjs
 3. If env vars detected, validates `.env.example` exists
 4. Warns if vars in `.env.example` lack comments/documentation
 
-**Usage in Husky:**
-
-```bash
-# .husky/pre-push
-npm run env:validate
-```
-
-**Usage in CI/CD:**
+**Usage in CI (recommended):**
 
 ```yaml
 # .github/workflows/security.yml
