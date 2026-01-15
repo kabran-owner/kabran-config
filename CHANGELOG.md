@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/kabran-owner/kabran-config/compare/v2.1.1...v2.2.0) (2026-01-15)
+
+
+### Features
+
+* **cli:** add native support for Turbo monorepos ([#29](https://github.com/kabran-owner/kabran-config/issues/29)) ([9ac16ba](https://github.com/kabran-owner/kabran-config/commit/9ac16ba7182fb19cd44e04711d95c3cb852f947d))
+
 ## [2.1.1](https://github.com/kabran-owner/kabran-config/compare/v2.1.0...v2.1.1) (2026-01-15)
 
 ### Bug Fixes
