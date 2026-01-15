@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1](https://github.com/kabran-owner/kabran-config/compare/v2.1.0...v2.1.1) (2026-01-15)
+
+
+### Bug Fixes
+
+* **cli:** improve Doppler auto-detection for all configuration methods ([#27](https://github.com/kabran-owner/kabran-config/issues/27)) ([45d28d4](https://github.com/kabran-owner/kabran-config/commit/45d28d458513eb1aa919840caaa98cbfcd6fc9ab))
+* **docs:** remove erroneous frontmatter from CHANGELOG ([#26](https://github.com/kabran-owner/kabran-config/issues/26)) ([701afd7](https://github.com/kabran-owner/kabran-config/commit/701afd78a796937f0bf1716bdcab220462e13953))
+
 ## [Unreleased]
 
 ### Bug Fixes
