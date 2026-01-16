@@ -2,13 +2,11 @@
 
 ## [2.2.1](https://github.com/kabran-owner/kabran-config/compare/v2.2.0...v2.2.1) (2026-01-15)
 
-
 ### Bug Fixes
 
 * **hooks:** make pre-push hook lightweight by design ([#31](https://github.com/kabran-owner/kabran-config/issues/31)) ([284397a](https://github.com/kabran-owner/kabran-config/commit/284397a37326ab1e633bd15f25a5a9378e570f0d))
 
 ## [2.2.0](https://github.com/kabran-owner/kabran-config/compare/v2.1.1...v2.2.0) (2026-01-15)
-
 
 ### Features
 
@@ -24,6 +22,18 @@
 ## [Unreleased]
 
 ### Features
+
+* **templates:** add self-hosted runner workflow templates
+  * New `ci-self-hosted.yml` template for Kosmos self-hosted runners
+  * New `ci-quality-self-hosted.yml` template with quality reporting on self-hosted
+  * Labels: `[self-hosted, linux, x64, docker]`
+  * Optimized timeouts and concurrency for shared runner infrastructure
+
+* **setup:** add `--runner` option to kabran-setup CLI
+  * `--runner=github` (default): GitHub-hosted runners (ubuntu-latest)
+  * `--runner=self-hosted`: Kosmos self-hosted runners
+  * Example: `npx kabran-setup --runner=self-hosted`
+  * Migrate existing projects: `npx kabran-setup --sync-workflows --runner=self-hosted`
 
 * **cli:** add native support for Turbo monorepos ([AGT-1117](https://linear.app/kabran/issue/AGT-1117))
   * Auto-detects `turbo.json` in project root

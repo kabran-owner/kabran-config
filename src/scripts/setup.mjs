@@ -11,6 +11,7 @@
  *
  * Options:
  *   --type=<node|react|base>  Project type (default: node)
+ *   --runner=<github|self-hosted>  Runner type (default: github)
  *   --skip-husky              Don't copy husky hooks
  *   --skip-workflows          Don't copy workflow files
  *   --sync-workflows          Overwrite existing workflow files
@@ -74,6 +75,7 @@ export function logDry(message) {
 export function parseArgs(args) {
   const options = {
     type: 'node',
+    runner: 'github',
     skipHusky: false,
     skipWorkflows: false,
     skipQualityStandard: false,
@@ -112,6 +114,14 @@ export function parseArgs(args) {
         logError(`Invalid type: ${type}. Valid options: node, react, base`);
         process.exit(1);
       }
+    } else if (arg.startsWith('--runner=')) {
+      const runner = arg.split('=')[1];
+      if (['github', 'self-hosted'].includes(runner)) {
+        options.runner = runner;
+      } else {
+        logError(`Invalid runner: ${runner}. Valid options: github, self-hosted`);
+        process.exit(1);
+      }
     }
   }
 
@@ -130,6 +140,7 @@ ${colors.yellow}USAGE:${colors.reset}
 
 ${colors.yellow}OPTIONS:${colors.reset}
   --type=<type>           Project type: node, react, base (default: node)
+  --runner=<runner>       Runner type: github, self-hosted (default: github)
   --skip-husky            Don't copy husky hooks
   --skip-workflows        Don't copy GitHub workflow files
   --skip-quality-standard Don't create quality-standard.md
@@ -147,8 +158,14 @@ ${colors.yellow}EXAMPLES:${colors.reset}
   # Setup React project
   npx kabran-setup --type=react
 
+  # Setup with self-hosted runners (Kosmos CI)
+  npx kabran-setup --runner=self-hosted
+
   # Update workflows only
   npx kabran-setup --sync-workflows
+
+  # Update to self-hosted workflows
+  npx kabran-setup --sync-workflows --runner=self-hosted
 
   # Generate telemetry .env.example
   npx kabran-setup --telemetry-env
@@ -160,6 +177,10 @@ ${colors.yellow}UPDATE STRATEGY:${colors.reset}
   - Config files:   Re-export from kabran-config (auto-update via npm update)
   - Workflows:      Copied once, update with --sync-workflows
   - Husky hooks:    Copied once, update with --sync-husky
+
+${colors.yellow}RUNNER TYPES:${colors.reset}
+  - github:       Standard GitHub-hosted runners (ubuntu-latest)
+  - self-hosted:  Kosmos self-hosted runners [self-hosted, linux, x64, docker]
 `);
 }
 
@@ -282,7 +303,7 @@ export function writeFile(dest, content, options = {}) {
  * @returns {object} Results
  */
 export function setupWorkflows(projectDir, templatesDir, options) {
-  const {force = false, dryRun = false, syncWorkflows = false} = options;
+  const {force = false, dryRun = false, syncWorkflows = false, runner = 'github'} = options;
   const overwrite = force || syncWorkflows;
 
   const results = {
@@ -291,13 +312,22 @@ export function setupWorkflows(projectDir, templatesDir, options) {
     skipped: 0,
   };
 
-  const workflowFiles = ['ci.yml', 'commitlint.yml', 'validate-pr-source.yml'];
+  // Determine CI workflow file based on runner type
+  const ciWorkflowSrc = runner === 'self-hosted' ? 'ci-self-hosted.yml' : 'ci.yml';
 
-  logInfo('Setting up GitHub workflows...');
+  // Map of source file -> destination file
+  const workflowFiles = [
+    {src: ciWorkflowSrc, dest: 'ci.yml'},
+    {src: 'commitlint.yml', dest: 'commitlint.yml'},
+    {src: 'validate-pr-source.yml', dest: 'validate-pr-source.yml'},
+  ];
+
+  const runnerLabel = runner === 'self-hosted' ? 'self-hosted' : 'GitHub-hosted';
+  logInfo(`Setting up GitHub workflows (${runnerLabel} runners)...`);
 
   for (const file of workflowFiles) {
-    const src = join(templatesDir, '.github', 'workflows', file);
-    const dest = join(projectDir, '.github', 'workflows', file);
+    const src = join(templatesDir, '.github', 'workflows', file.src);
+    const dest = join(projectDir, '.github', 'workflows', file.dest);
 
     const status = copyFile(src, dest, {overwrite, dryRun});
 
@@ -648,6 +678,7 @@ export function runSetup(projectDir, options) {
   console.log('');
   logInfo(`Setting up project at: ${projectDir}`);
   logInfo(`Project type: ${options.type}`);
+  logInfo(`Runner type: ${options.runner}`);
   if (options.dryRun) {
     logWarn('DRY-RUN MODE - No files will be modified');
   }
