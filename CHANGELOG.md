@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/kabran-owner/kabran-config/compare/v2.3.0...v2.4.0) (2026-01-16)
+
+
+### Features
+
+* **templates:** add pnpm/turbo support and security workflows for self-hosted ([#35](https://github.com/kabran-owner/kabran-config/issues/35)) ([3aca929](https://github.com/kabran-owner/kabran-config/commit/3aca92967cc4543cd00ff3a4e1f07b520c843558))
+
 ## [2.3.0](https://github.com/kabran-owner/kabran-config/compare/v2.2.1...v2.3.0) (2026-01-16)
 
 
