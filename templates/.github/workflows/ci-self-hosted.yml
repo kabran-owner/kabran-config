@@ -1,7 +1,7 @@
 # Kabran CI Workflow (Self-Hosted Runners)
 #
 # This workflow runs CI on self-hosted runners with Docker support.
-# Use this when you have Kosmos CI runners configured.
+# Optimized for Turborepo monorepos with pnpm.
 #
 # Runner Labels: [self-hosted, linux, x64, docker]
 #
@@ -29,25 +29,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Type Check
-        run: npm run type-check
-
-      - name: Build
-        run: npm run build
-
-      - name: Test
-        run: npm test
+      - name: Run CI Pipeline
+        run: pnpm run ci
         env:
           CI: true

@@ -34,7 +34,15 @@
   * New `ci-self-hosted.yml` template for Kosmos self-hosted runners
   * New `ci-quality-self-hosted.yml` template with quality reporting on self-hosted
   * Labels: `[self-hosted, linux, x64, docker]`
-  * Optimized timeouts and concurrency for shared runner infrastructure
+  * Optimized for Turborepo monorepos with pnpm
+  * Uses pnpm 10 + Node.js 24 + single `pnpm run ci` command
+  * Consolidated pipeline steps for better performance
+
+* **templates:** add security workflow templates
+  * New `dependabot.yml` config for automated dependency updates (npm/pnpm + GitHub Actions)
+  * New `dependency-review-self-hosted.yml` to block PRs with vulnerable dependencies
+  * New `secret-scanning-self-hosted.yml` using Gitleaks for secret detection
+  * Configured to deny GPL/AGPL licenses and fail on high/critical vulnerabilities
 
 * **setup:** add `--runner` option to kabran-setup CLI
   * `--runner=github` (default): GitHub-hosted runners (ubuntu-latest)
