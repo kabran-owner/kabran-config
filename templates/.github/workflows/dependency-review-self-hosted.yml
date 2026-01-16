@@ -1,0 +1,42 @@
+# Dependency Review Workflow (Self-Hosted Runners)
+#
+# Scans PRs for vulnerable dependencies and blocks merge if found.
+# Uses GitHub's dependency-review-action.
+#
+# Runner Labels: [self-hosted, linux, x64, docker]
+#
+# For GitHub-hosted runners, use dependency-review.yml instead.
+#
+# Requirements:
+#   - Dependency graph enabled in repository settings
+#   - GitHub Advanced Security (for private repos) or public repo
+
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Scan Dependencies
+    runs-on: [self-hosted, linux, x64, docker]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Fail on high and critical vulnerabilities
+          fail-on-severity: high
+          # Also check license compatibility
+          deny-licenses: GPL-3.0, AGPL-3.0
+          # Comment on PR with findings
+          comment-summary-in-pr: always
