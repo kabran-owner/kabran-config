@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/kabran-owner/kabran-config/compare/v2.2.1...v2.3.0) (2026-01-16)
+
+
+### Features
+
+* **templates:** add self-hosted runner workflow templates ([#33](https://github.com/kabran-owner/kabran-config/issues/33)) ([2e9419e](https://github.com/kabran-owner/kabran-config/commit/2e9419e2e98c840f2ae7fde9608dfa7b2dd0496c))
+
 ## [2.2.1](https://github.com/kabran-owner/kabran-config/compare/v2.2.0...v2.2.1) (2026-01-15)
 
 ### Bug Fixes
