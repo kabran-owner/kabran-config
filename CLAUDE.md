@@ -1,5 +1,25 @@
-# CLAUDE.md
+<!-- CLAUDE_STANDARD_START -->
+# Core Principles
 
+1. **AI-Native Software House**: Humans define SPECS (WHAT); Agents implement CODE (HOW).
+2. **Docs-as-Code**: Specs are markdown files, versioned, structured, and traceable. Code MUST reflect specs.
+3. **Quality First**: Lint, type-check, and test are non-negotiable. CI/CD must pass.
+
+## Universal Rules
+
+- **Git Flow**: NO direct PR to `main`. Flow: `feature` -> `staging` -> `main`.
+- **Supabase**: DO NOT start local instances. ALWAYS use Cloud Instance.
+- **Automation**: Check `Makefile` first for available commands.
+- **Context**: Read `.context/codebase-map.json` if available.
+- **Config**: Env vars managed via **Doppler** (scoped by directory, NOT env).
+- **Issues**: Report inconsistencies via `kore galaxy-report create "<title>"`.
+- **Repo Hygiene**: NO uncommitted files. Commit or add to `.gitignore`.
+- **Formatting**: Github-flavored Markdown. No tables for simple lists.
+- **Security**: NO secrets/tokens in code. Use env vars. Verify dependencies.
+
+<!-- CLAUDE_STANDARD_END -->
+
+<!-- CLAUDE_CUSTOM_START -->
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
@@ -96,3 +116,4 @@ Projects create thin wrappers that set environment variables and call the runner
 2. Update `package.json` version
 3. Ask the user: "Quer que eu publique o release X.X.X no npm?"
 4. Only run `npm publish` after explicit user confirmation
+<!-- CLAUDE_CUSTOM_END -->
