@@ -16,7 +16,16 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import {loadConfig, DEFAULTS} from '../core/config-loader.mjs';
+
+/**
+ * Default configuration values for README sections.
+ */
+const DEFAULTS = {
+  readme: {
+    required: ['Installation', 'Usage', 'License'],
+    recommended: ['Development', 'Testing', 'Contributing'],
+  },
+};
 
 /**
  * Build section patterns from config array.
@@ -81,8 +90,8 @@ export async function validateReadme(cwd = process.cwd(), silent = false) {
   const errors = [];
   const warnings = [];
 
-  // Load project config
-  const config = await loadConfig(cwd);
+  // Use default config (no dynamic loading needed)
+  const config = DEFAULTS;
 
   // Build section patterns from config
   const requiredSections = [

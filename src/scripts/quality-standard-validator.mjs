@@ -16,7 +16,15 @@
 
 import {existsSync, readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {loadConfig, DEFAULTS} from '../core/config-loader.mjs';
+
+/**
+ * Default configuration values for quality standard.
+ */
+const DEFAULTS = {
+  quality: {
+    standardPath: 'docs/quality/001-quality-standard.md',
+  },
+};
 
 // Default path for backwards compatibility
 export const DEFAULT_STANDARD_PATH = DEFAULTS.quality.standardPath;
@@ -197,8 +205,8 @@ export async function validate(cwd = process.cwd(), silent = false) {
   const errors = [];
   const warnings = [];
 
-  // Load project config
-  const config = await loadConfig(cwd);
+  // Use default config (no dynamic loading needed)
+  const config = DEFAULTS;
   const standardPath = config.quality.standardPath;
 
   log('');
@@ -329,7 +337,7 @@ export async function validate(cwd = process.cwd(), silent = false) {
  * @returns {Promise<Object>} Check result for ci-result.json
  */
 export async function getQualityStandardCheckResult(cwd = process.cwd()) {
-  const config = await loadConfig(cwd);
+  const config = DEFAULTS;
   const standardPath = config.quality.standardPath;
   const fileInfo = findQualityStandard(cwd, standardPath);
 
