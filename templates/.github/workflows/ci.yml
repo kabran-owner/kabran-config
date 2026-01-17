@@ -1,3 +1,17 @@
+# Kabran CI Workflow
+#
+# Optimized CI pipeline for Turborepo monorepos with:
+# - Parallel jobs (format, lint, type-check, build, test)
+# - Turbo remote caching for faster builds
+# - Self-hosted runners (Kosmos)
+#
+# Runner Labels: [self-hosted, linux, x64, docker]
+#
+# Customization:
+#   - Edit TURBO_TOKEN/TURBO_TEAM in repository secrets/variables
+#   - Adjust timeout-minutes per job as needed
+#   - Remove unused jobs (e.g., format if not using Prettier)
+
 name: CI
 
 on:
@@ -10,75 +24,210 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  CI: true
+
 jobs:
+  # Format check - runs in parallel
+  format:
+    name: Format
+    runs-on: [self-hosted, linux, x64, docker]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-format-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-format-${{ runner.os }}-
+
+      - name: Format Check
+        run: pnpm run format
+
+  # Lint job - runs in parallel
   lint:
     name: Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: [self-hosted, linux, x64, docker]
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-      - run: npm ci
-      - run: npm run lint
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-lint-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-lint-${{ runner.os }}-
+
+      - name: Lint
+        run: pnpm run lint
+
+  # Type Check job - runs in parallel
   type-check:
     name: Type Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: [self-hosted, linux, x64, docker]
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-      - run: npm ci
-      - run: npm run type-check
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-typecheck-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-typecheck-${{ runner.os }}-
+
+      - name: Type Check
+        run: pnpm run type-check
+
+  # Build job - runs in parallel
   build:
     name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: [self-hosted, linux, x64, docker]
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-      - run: npm ci
-      - run: npm run build
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-build-${{ runner.os }}-
+
+      - name: Build
+        run: pnpm run build
+
+  # Test job - runs after build
   test:
     name: Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: build
+    runs-on: [self-hosted, linux, x64, docker]
+    needs: [build]
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-          cache: "npm"
-      - run: npm ci
-      - run: npm test
-        env:
-          CI: true
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  ci-success:
-    name: CI Success
-    runs-on: ubuntu-latest
-    needs: [lint, type-check, build, test]
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-test-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            turbo-test-${{ runner.os }}-
+
+      - name: Test
+        run: pnpm run test
+
+  # Summary job - final status check
+  summary:
+    name: CI Summary
+    runs-on: [self-hosted, linux, x64, docker]
+    needs: [format, lint, type-check, build, test]
     if: always()
+    timeout-minutes: 5
     steps:
-      - name: Check all jobs passed
+      - name: Check results
         run: |
-          if [[ "${{ needs.lint.result }}" != "success" ]] ||
-             [[ "${{ needs.type-check.result }}" != "success" ]] ||
-             [[ "${{ needs.build.result }}" != "success" ]] ||
-             [[ "${{ needs.test.result }}" != "success" ]]; then
-            echo "One or more jobs failed"
+          if [ "${{ needs.format.result }}" != "success" ] || \
+             [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.type-check.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ]; then
+            echo "❌ One or more CI jobs failed"
+            echo ""
+            echo "Results:"
+            echo "  Format:     ${{ needs.format.result }}"
+            echo "  Lint:       ${{ needs.lint.result }}"
+            echo "  Type Check: ${{ needs.type-check.result }}"
+            echo "  Build:      ${{ needs.build.result }}"
+            echo "  Test:       ${{ needs.test.result }}"
             exit 1
           fi
-          echo "All jobs passed!"
+          echo "✅ All CI checks passed!"

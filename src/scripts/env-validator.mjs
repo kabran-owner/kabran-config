@@ -18,7 +18,16 @@ import {exec} from 'node:child_process';
 import {promisify} from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
-import {loadConfig, DEFAULTS} from '../core/config-loader.mjs';
+
+/**
+ * Default configuration values for env validation.
+ */
+const DEFAULTS = {
+  env: {
+    requireExample: true,
+    detectPatterns: ['process.env', 'import.meta.env', 'Deno.env', 'os.getenv', '$_ENV'],
+  },
+};
 
 const execAsync = promisify(exec);
 
@@ -154,8 +163,8 @@ export async function validateEnv(cwd = process.cwd(), silent = false) {
   const errors = [];
   const warnings = [];
 
-  // Load project config
-  const config = await loadConfig(cwd);
+  // Use default config (no dynamic loading needed)
+  const config = DEFAULTS;
 
   // CRITICAL: Check if .env is committed to git
   log('Checking for .env in git...');
@@ -236,7 +245,7 @@ export async function validateEnv(cwd = process.cwd(), silent = false) {
  * @returns {Promise<Object>} Check result for ci-result.json
  */
 export async function getEnvCheckResult(cwd = process.cwd()) {
-  const config = await loadConfig(cwd);
+  const config = DEFAULTS;
   const envInGit = await checkEnvInGit(cwd);
   const envExample = checkEnvExampleExists(cwd);
   const {usesEnv} = await detectEnvUsage(cwd, config.env.detectPatterns);

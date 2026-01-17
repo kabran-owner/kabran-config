@@ -1,21 +1,45 @@
+# Commitlint Workflow
+#
+# Validates commit messages follow Conventional Commits format.
+# Runs on pull requests targeting main/staging branches.
+#
+# Runner Labels: [self-hosted, linux, x64, docker]
+
 name: Commitlint
 
 on:
   pull_request:
     branches: [main, staging]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   commitlint:
-    name: Validate Commits
-    runs-on: ubuntu-latest
+    name: Lint Commit Messages
+    runs-on: [self-hosted, linux, x64, docker]
     timeout-minutes: 5
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          node-version: "24"
-          cache: "npm"
-      - run: npm ci
-      - run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate commits
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose

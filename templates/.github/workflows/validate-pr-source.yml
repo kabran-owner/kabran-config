@@ -1,25 +1,45 @@
+# Validate PR Source Branch Workflow
+#
+# Ensures PRs to main come from staging (not feature branches).
+# Prevents direct merges to main from feature branches.
+#
+# Runner Labels: [self-hosted, linux, x64, docker]
+
 name: Validate PR Source
 
 on:
   pull_request:
     branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   validate-source:
     name: Validate Source Branch
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
+    runs-on: [self-hosted, linux, x64, docker]
+    timeout-minutes: 5
+
     steps:
-      - name: Check PR source branch
+      - name: Check source branch
         run: |
           SOURCE_BRANCH="${{ github.head_ref }}"
+          TARGET_BRANCH="${{ github.base_ref }}"
 
-          if [[ "$SOURCE_BRANCH" == "staging" ]] || [[ "$SOURCE_BRANCH" == hotfix/* ]]; then
-            echo "✅ Branch permitida: $SOURCE_BRANCH"
-            exit 0
+          echo "Source: $SOURCE_BRANCH"
+          echo "Target: $TARGET_BRANCH"
+
+          if [ "$TARGET_BRANCH" = "main" ] && [ "$SOURCE_BRANCH" != "staging" ]; then
+            echo ""
+            echo "❌ ERROR: PRs to 'main' must come from 'staging' branch."
+            echo ""
+            echo "To fix:"
+            echo "  1. Merge your branch into 'staging' first"
+            echo "  2. Create a PR from 'staging' to 'main'"
+            echo ""
+            exit 1
           fi
 
-          echo "❌ PRs para main só podem vir de:"
-          echo "   - staging"
-          echo "   - hotfix/*"
-          exit 1
+          echo "✅ PR source branch is valid"
