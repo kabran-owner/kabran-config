@@ -2,6 +2,17 @@
 
 ## [3.0.0](https://github.com/kabran-owner/kabran-config/compare/v2.4.0...v3.0.0) (2026-01-17)
 
+
+### ⚠ BREAKING CHANGES
+
+* Remove unified kabran CLI binary and OpenTelemetry integration
+
+### Features
+
+* simplify package by removing CLI and telemetry ([#37](https://github.com/kabran-owner/kabran-config/issues/37)) ([2001766](https://github.com/kabran-owner/kabran-config/commit/2001766f300f13c1fbe2b95436f0ab769961b7c9))
+
+## [3.0.0](https://github.com/kabran-owner/kabran-config/compare/v2.4.0...v3.0.0) (2026-01-17)
+
 ### ⚠ BREAKING CHANGES
 
 - **cli:** Remove unified `kabran` CLI binary and all CLI commands
