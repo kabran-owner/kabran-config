@@ -305,8 +305,8 @@ export function setupWorkflows(projectDir, templatesDir, options) {
     skipped: 0,
   };
 
-  // CI workflow (always use self-hosted since standard ci.yml was removed)
-  const ciWorkflowSrc = 'ci-self-hosted.yml';
+  // CI workflow (unified template with parallel jobs)
+  const ciWorkflowSrc = 'ci.yml';
 
   // Map of source file -> destination file
   const workflowFiles = [

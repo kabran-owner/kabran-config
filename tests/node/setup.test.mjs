@@ -125,7 +125,7 @@ describe('setup CLI', () => {
 
     it('should contain workflow templates', () => {
       const templatesDir = getTemplatesDir();
-      expect(existsSync(join(templatesDir, '.github', 'workflows', 'ci-self-hosted.yml'))).toBe(true);
+      expect(existsSync(join(templatesDir, '.github', 'workflows', 'ci.yml'))).toBe(true);
     });
 
     it('should contain husky templates', () => {
